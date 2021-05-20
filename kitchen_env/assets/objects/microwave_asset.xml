@@ -1,14 +1,14 @@
-<mujocoinclude>
+<include>
 
     <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
 
     <asset>
-        <mesh file="objects/meshes/micro.stl" name="micro"/>
-        <mesh file="objects/meshes/microdoor.stl" name="microdoor"/>
-        <mesh file="objects/meshes/microbutton.stl" name="microbutton"/>
-        <mesh file="objects/meshes/microfeet.stl" name="microfeet"/>
-        <mesh file="objects/meshes/microhandle.stl" name="microhandle"/>
-        <mesh file="objects/meshes/microwindow.stl" name="microwindow"/>
+        <mesh file="meshes/objects/micro.stl" name="micro"/>
+        <mesh file="meshes/objects/microdoor.stl" name="microdoor"/>
+        <mesh file="meshes/objects/microbutton.stl" name="microbutton"/>
+        <mesh file="meshes/objects/microfeet.stl" name="microfeet"/>
+        <mesh file="meshes/objects/microhandle.stl" name="microhandle"/>
+        <mesh file="meshes/objects/microwindow.stl" name="microwindow"/>
 
         <texture name="T_micro_metal" type="cube" height="1" width="1" file="textures/metal1.png"/>
 
@@ -29,4 +29,4 @@
         </default>
     </default>
 
-</mujocoinclude>
+</include>

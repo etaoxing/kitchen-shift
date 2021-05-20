@@ -1,7 +1,6 @@
-<mujocoinclude>
-
+<include>
     <body name="kettleroot" childclass="kettle">
-        <geom mesh="kettle"/>
+        <geom type="mesh" mesh="kettle"/>
         <geom material="kettle_wood" euler="0 1.57 0" pos="0 0 0.259" size="0.032 0.1" type="capsule"/>
         <geom material="kettle_wood" euler="0 1.57 0" pos="0 0 0.13" size="0.011" type="sphere"/>
         <geom euler="0 1.57 0" pos="0 0 0.259" size="0.02 0.115" type="capsule"/>
@@ -17,4 +16,4 @@
         <geom class="kettle_collision" pos="0 0 0.058" size="0.122 0.122 0.058" type="box" mass='.8'/>
         <site type="sphere" name="kettle_site" pos="0 0 0.259" size=".01" group="3" rgba="1 0 0 1"/>
     </body>
-</mujocoinclude>
+</include>

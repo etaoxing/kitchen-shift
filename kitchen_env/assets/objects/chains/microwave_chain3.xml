@@ -1,11 +1,17 @@
-<mujocoinclude>
-<!-- =================================================
+<include>
+    <!-- =================================================
     Copyright 2019 Vikash Kumar
     Model   :: microwave (MuJoCoV2.0)
     Author  :: Vikash Kumar (vikashplus@gmail.com)
     Details :: https://github.com/vikashplus/furniture_sim
-    License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-====================================================== -©vk©-->
+    License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to
+    in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+    ====================================================== -©vk©-->
     <body name="microroot3" childclass="microwave">
         <geom type="box" size=".3 .02 .20" pos="0 .22 .20" material="micro_white"/> <!--back -->
         <geom type="box" size=".3 .2 .02" pos="0 0 .02" material="micro_white"/> <!--bottom -->
@@ -25,7 +31,7 @@
         <geom class="micro_collision" type="cylinder" size=".03 .01" pos="0.25 -.25 .08" euler="1.57 0 0"/>
 
         <body name="microdoorroot3">
-            <joint axis="0 0 1" pos="-.3 -.2 .20" limited="true" name="microjoint3" range="-2.094 0"/>
+            <joint type="hinge" axis="0 0 1" pos="-.3 -.2 .20" limited="true" name="microjoint3" range="-2.094 0"/>
             <geom type="box" size=".245 .02 .20" pos="-.05 -.225 .20" material="micro_white"/>
             <geom type="box" size=".2 .02 .12" pos="-.05 -.24 .20" material="micro_black" rgba=".1 0 0 .2"/>
             <geom material="micro_metal" pos="0.15 -0.3 0.20" size="0.02 0.17" type="capsule"/>
@@ -40,4 +46,4 @@
         </body>
     </body>
 
-</mujocoinclude>
+</include>

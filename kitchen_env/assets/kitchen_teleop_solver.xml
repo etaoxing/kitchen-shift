@@ -53,26 +53,26 @@
         </body>
 
         <body name='desk' pos='-0.1 0.75 0'>
-
-            <body name="counters1" pos="0 0 0" >
+            <body name="counters1" pos="0 0 0">
                 <include file="objects/chains/counters_chain.xml"/>
             </body>
-            <body name="oven" pos="0 0 0" >
+            <body name="oven" pos="0 0 0">
                 <include file="objects/chains/oven_chain.xml"/>
             </body>
-            <body name="backwall" pos="0 0 0" >
+            <body name="backwall" pos="0 0 0">
                 <include file="objects/chains/backwall_chain.xml"/>
             </body>
-            <body name="slidecabinet" pos="0.4 0.3 2.6" >
+            <body name="slidecabinet" pos="0.4 0.3 2.6">
                 <include file="objects/chains/slidecabinet_chain.xml"/>
             </body>
-            <body name="hingecabinet" pos="-0.504 0.28 2.6" >
+            <body name="hingecabinet" pos="-0.504 0.28 2.6">
                 <include file="objects/chains/hingecabinet_chain.xml"/>
             </body>
             <body name="microwave" pos="-0.750 -0.025 1.6" euler="0 0 0.3">
                 <include file="objects/chains/microwave_chain.xml"/>
             </body>
         </body>
+
         <body name="kettle" pos="-0.269 0.35 1.626">
             <freejoint/>
             <include file="objects/chains/kettle_chain.xml"/>

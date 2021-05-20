@@ -1,6 +1,6 @@
 <!-- third_party/franka/assets/chain_0.xml -->
 <!-- Robot limits pulled from https://frankaemika.github.io/docs/control_parameters.html#constants -->
-<mujocoinclude>
+<include>
     <body name="panda0_link0" childclass="panda">
         <geom class="panda_viz" mesh="link0_viz"/>
         <geom class="panda_col" mesh="link0_col" mass="2.91242"/>
@@ -79,4 +79,4 @@
             </body>
         </body>
     </body>
-</mujocoinclude>
+</include>

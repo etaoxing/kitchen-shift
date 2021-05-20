@@ -1,4 +1,4 @@
-<mujocoinclude>
+<include>
     <body name="slide" childclass="slidecabinet">
         <geom pos="-0.225 0 -0.18" size="0.223 0.3 0.02" type="box"/>
         <geom pos="0.224 0 0" size="0.226 0.3 0.2" type="box"/>
@@ -25,4 +25,4 @@
             <site type="sphere" name="slide_site" pos="-0.183 -0.123 0" size=".01" group="3"/>
         </body>
     </body>
-</mujocoinclude>
+</include>

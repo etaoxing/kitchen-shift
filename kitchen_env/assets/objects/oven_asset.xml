@@ -1,18 +1,18 @@
-<mujocoinclude>
+<include>
 
     <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
 
     <asset>
-        <mesh file="objects/meshes/hood.stl" name="hood"/>
-        <mesh file="objects/meshes/lightswitch.stl" name="lightswitch"/>
-        <mesh file="objects/meshes/lightswitchbase.stl" name="lightswitchbase"/>
-        <mesh file="objects/meshes/knob.stl" name="knob"/>
-        <mesh file="objects/meshes/stoverim.stl" name="stoverim"/>
-        <mesh file="objects/meshes/burnerplate.stl" name="burnerplate"/>
-        <mesh file="objects/meshes/ovenhandle.stl" name="ovenhandle"/>
-        <mesh file="objects/meshes/oven.stl" name="oven"/>
-        <mesh file="objects/meshes/oventop.stl" name="oventop"/>
-        <mesh file="objects/meshes/ovenwindow.stl" name="ovenwindow"/>
+        <mesh file="meshes/objects/hood.stl" name="hood"/>
+        <mesh file="meshes/objects/lightswitch.stl" name="lightswitch"/>
+        <mesh file="meshes/objects/lightswitchbase.stl" name="lightswitchbase"/>
+        <mesh file="meshes/objects/knob.stl" name="knob"/>
+        <mesh file="meshes/objects/stoverim.stl" name="stoverim"/>
+        <mesh file="meshes/objects/burnerplate.stl" name="burnerplate"/>
+        <mesh file="meshes/objects/ovenhandle.stl" name="ovenhandle"/>
+        <mesh file="meshes/objects/oven.stl" name="oven"/>
+        <mesh file="meshes/objects/oventop.stl" name="oventop"/>
+        <mesh file="meshes/objects/ovenwindow.stl" name="ovenwindow"/>
 
         <texture name="T_oven_wood" type="cube" height="1" width="1" file="textures/wood1.png"/>
         <texture name="T_oven_metal" type="cube" height="1" width="1" file="textures/metal1.png"/>
@@ -24,11 +24,12 @@
         <material name="oven_block" rgba=".1 .1 .1 1"/>
         <material name="oven_collision_blue" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0"/>
     </asset>
+
     <default>
         <default class="oven">
             <joint armature="0.001" damping="2" limited="true"/>
             <geom conaffinity="0" contype="0" group="1" material="oven_metal" type="mesh"/>
-            <default class="ovenlight" >
+            <default class="ovenlight">
                 <light directional="false" castshadow="true" attenuation="0.03 0.03 0.03" cutoff="100" exponent="25" diffuse=".7 .65 .65" specular=".3 .3 .3"/>
             </default>
             <default class="oven_collision">
@@ -45,6 +46,4 @@
         <joint polycoef="0 14 0 0 0" joint1="lightswitch_joint" joint2="light_joint"/>
     </equality>
 
-        <equality>
-    </equality>
-</mujocoinclude>
+</include>

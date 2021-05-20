@@ -1,4 +1,4 @@
-<mujocoinclude>
+<include>
 
     <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
 
@@ -22,4 +22,4 @@
         </default>
     </default>
 
-</mujocoinclude>
+</include>

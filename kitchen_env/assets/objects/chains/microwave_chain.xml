@@ -1,8 +1,8 @@
-<mujocoinclude>
+<include>
     <body name="microroot" childclass="microwave">
-        <geom mesh="micro"/>
-        <geom material="micro_metal" mesh="microbutton"/>
-        <geom material="micro_metal" mesh="microfeet"/>
+        <geom type="mesh" mesh="micro"/>
+        <geom material="micro_metal" type="mesh" mesh="microbutton"/>
+        <geom material="micro_metal" type="mesh" mesh="microfeet"/>
 
         <geom class="micro_collision" pos="-0.316 0.023 0.187" size="0.029 0.199 0.187" type="box" mass=".5"/>
         <geom class="micro_collision" pos="0.236 0.023 0.187" size="0.109 0.199 0.187" type="box" mass=".5"/>
@@ -11,9 +11,9 @@
         <geom class="micro_collision" pos="-0.08 -0.008 0.024" size="0.207 0.168 0.024" type="box" mass=".5"/>
         <geom class="micro_collision" pos="0.26 -0.197 0.187" size="0.085 0.024 0.187" type="box" mass=".5"/>
         <body name="microdoorroot" pos="-0.345 -0.176 0.192">
-            <joint axis="0 0 1" limited="true" name="microjoint" range="-2.094 0"/>
-            <geom mesh="microdoor" pos="0.345 0.176 -0.192"/>
-            <geom material="micro_window" mesh="microwindow" pos="0.345 0.176 -0.192"/>
+            <joint type="hinge" axis="0 0 1" limited="true" name="microjoint" range="-2.094 0"/>
+            <geom type="mesh" mesh="microdoor" pos="0.345 0.176 -0.192"/>
+            <geom material="micro_window" type="mesh" mesh="microwindow" pos="0.345 0.176 -0.192"/>
             <geom material="micro_metal" pos="0.475 -0.108 0" size="0.02 0.13" type="capsule"/>
             <geom material="micro_metal" euler="1.57 0 0" pos="0.475 -0.075 .13" size="0.02 0.03" type="capsule"/>
             <geom material="micro_metal" euler="1.57 0 0" pos="0.475 -0.075 -.13" size="0.02 0.03" type="capsule"/>
@@ -25,4 +25,4 @@
             <site type="sphere" name="microhandle_site" pos="0.475 -0.108 0" size=".01" group="3" rgba="1 1 0 1"/>
         </body>
     </body>
-</mujocoinclude>
+</include>

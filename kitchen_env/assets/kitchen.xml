@@ -5,18 +5,6 @@
     <!-- <option timestep="0.002"/> -->
     <size njmax='1000' nconmax='1000'/>
 
-    <!-- from adept_models/scenes/basic_scene.xml -->
-    <asset>
-        <!-- <texture name="skybox" type="skybox" builtin="gradient" rgb1=".08 .09 .10" rgb2="0 0 0"
-               width="800" height="800" mark="random" markrgb=".8 .8 .8"/> -->
-
-        <!-- <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" markrgb='.1 .1 .1' mark='random' random='.05'/> -->
-        <texture name="texplane" type="2d" height="1" width="1" file="textures/white_marble_tile2.png" />
-        <!-- <texture name="texplane" type="2d" height="1" width="1" file="textures/floor/floor18.png" mark='edge' markrgb='0 0 0'/> -->
-        <!-- <texture name="texplane" type="2d" height="1" width="1" file="textures/floor/floor6.png" mark='edge' markrgb='0 0 0'/> -->
-        <material name='MatPlane' reflectance='0.05' texture="texplane" texrepeat="4 4" texuniform="true"/>
-    </asset>
-
     <include file="franka/actuator0.xml"/>
     <include file="franka/franka_panda_headers.xml"/>
 
@@ -36,10 +24,21 @@
 
     <!-- revert to defaults, see https://github.com/deepmind/dm_control/blob/30069ac11b60ee71acbd9159547d0bc334d63281/dm_control/_render/pyopengl/osmesa_renderer_test.py#L30 -->
     <visual>
-    <global offwidth="640" offheight="480" />
-    <quality shadowsize="1024" offsamples="4" />
-    <!-- <map force="0.1" fogend="5" /> -->
+        <global offwidth="640" offheight="480" />
+        <quality shadowsize="1024" offsamples="4" />
+        <!-- <map force="0.1" fogend="5" /> -->
     </visual>
+
+    <!-- from adept_models/scenes/basic_scene.xml -->
+    <asset>
+        <!-- <texture name="skybox" type="skybox" builtin="gradient" rgb1=".08 .09 .10" rgb2="0 0 0" width="800" height="800" mark="random" markrgb=".8 .8 .8"/> -->
+
+        <!-- <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" markrgb='.1 .1 .1' mark='random' random='.05'/> -->
+        <texture name="texplane" type="2d" height="1" width="1" file="textures/white_marble_tile2.png"/>
+        <!-- <texture name="texplane" type="2d" height="1" width="1" file="textures/floor/floor18.png" mark='edge' markrgb='0 0 0'/> -->
+        <!-- <texture name="texplane" type="2d" height="1" width="1" file="textures/floor/floor6.png" mark='edge' markrgb='0 0 0'/> -->
+        <material name='MatPlane' reflectance='0.05' texture="texplane" texrepeat="4 4" texuniform="true"/>
+    </asset>
 
     <compiler inertiafromgeom='auto' inertiagrouprange='3 5' angle="radian"/>
 
@@ -58,27 +57,29 @@
             <include file="franka/franka_panda.xml"/>
         </body>
 
-        <body name='desk' pos='-0.1 0.75 0'>
+        <!-- <include file="franka/franka_panda.xml"/> -->
 
-            <body name="counters1" pos="0 0 0" >
+        <body name='desk' pos='-0.1 0.75 0'>
+            <body name="counters1" pos="0 0 0">
                 <include file="objects/chains/counters_chain.xml"/>
             </body>
-            <body name="oven" pos="0 0 0" >
+            <body name="oven" pos="0 0 0">
                 <include file="objects/chains/oven_chain.xml"/>
             </body>
-            <body name="backwall" pos="0 0 0" >
+            <body name="backwall" pos="0 0 0">
                 <include file="objects/chains/backwall_chain.xml"/>
             </body>
-            <body name="slidecabinet" pos="0.4 0.3 2.6" >
+            <body name="slidecabinet" pos="0.4 0.3 2.6">
                 <include file="objects/chains/slidecabinet_chain.xml"/>
             </body>
-            <body name="hingecabinet" pos="-0.504 0.28 2.6" >
+            <body name="hingecabinet" pos="-0.504 0.28 2.6">
                 <include file="objects/chains/hingecabinet_chain.xml"/>
             </body>
             <body name="microwave" pos="-0.750 -0.025 1.6" euler="0 0 0.3">
                 <include file="objects/chains/microwave_chain.xml"/>
             </body>
         </body>
+
         <body name="kettle" pos="-0.269 0.35 1.626">
             <freejoint/>
             <include file="objects/chains/kettle_chain.xml"/>
@@ -86,8 +87,8 @@
 
     </worldbody>
 
-    <keyframe>
+    <!-- <keyframe>
         <key qpos='0.16 -1.76 1.84 -2.51 0.36 0.79 1.55 0.00 0.0 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 8.24417e-05 9.48283e-05 0 0 0 0 -0.269 0.35 1.61523 1 1.34939e-19 -3.51612e-05 -7.50168e-19'/>
-    </keyframe>
+    </keyframe> -->
 
 </mujoco>

@@ -1,5 +1,7 @@
 <!-- third_party/franka/assets/actuator0.xml -->
-<mujocoinclude>
+<include>
+    <size nuser_actuator="5"/>
+
     <actuator>
         <position name="panda0_joint1" joint="panda0_joint1" class="panda" kp="870" forcerange="-87 87" ctrlrange="-2.9671 2.9671"/> <!-- velocity="2.1750" -->
         <position name="panda0_joint2" joint="panda0_joint2" class="panda" kp="870" forcerange="-87 87" ctrlrange="-1.8326 1.8326"/> <!-- velocity="2.1750" -->
@@ -11,4 +13,4 @@
         <position name="r_gripper_finger_joint" joint="panda0_finger_joint1" class="panda_finger" kp="500" forcerange="-70 70" ctrlrange="0 0.04"/> <!-- velocity=".2" -->
         <position name="l_gripper_finger_joint" joint="panda0_finger_joint2" class="panda_finger" kp="500" forcerange="-70 70" ctrlrange="0 0.04"/> <!-- velocity=".2" -->
     </actuator>
-</mujocoinclude>
+</include>
