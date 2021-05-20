@@ -30,10 +30,10 @@
             <joint pos="0 0 0" axis="0 0 1" limited="true"/>
             <position forcelimited="true" ctrllimited="true" user="1002 40 2001 -0.005 0.005"/>
             <default class="panda_viz">
-                <geom contype="0" conaffinity="0" group="0" type="mesh" rgba=".95 .99 .92 1" mass="0"/>
+                <geom contype="0" conaffinity="0" group="0" rgba=".95 .99 .92 1" mass="0"/>
             </default>
             <default class="panda_col">
-                <geom contype="1" conaffinity="1" group="3" type="mesh" rgba=".5 .6 .7 1"/>
+                <geom contype="1" conaffinity="1" group="3" rgba=".5 .6 .7 1"/>
             </default>
             <default class="panda_arm">
                 <joint damping="100"/>
@@ -47,10 +47,10 @@
                 <position user="1002 40 2001 -0.0001 0.0001"/>
             </default>
         </default>
-        <default class="panda_overlay">
+        <!-- <default class="panda_overlay">
             <joint limited="false" damping="1000" armature="1" frictionloss="10"/>
-            <geom contype="0" conaffinity="0" group="2" type="mesh" rgba=".42 0.42 0.42 .5"/>
-        </default>
+            <geom contype="0" conaffinity="0" group="2" rgba=".42 0.42 0.42 .5"/>
+        </default> -->
     </default>
 
 </include>
