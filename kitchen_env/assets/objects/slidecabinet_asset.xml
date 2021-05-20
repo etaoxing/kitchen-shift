@@ -13,7 +13,7 @@
     <default>
         <default class="slidecabinet">
             <joint damping="2" frictionloss="2" armature=".01" limited="true"/>
-            <geom conaffinity="0" contype="0" group="1" material="M_slide_blue" type="mesh"/>
+            <geom conaffinity="0" contype="0" group="1" material="M_slide_blue"/>
             <default class="slide_collision">
                 <geom conaffinity="1" condim="3" contype="0" group="4" margin="0.001" material="slide_collision_blue"/>
             </default>

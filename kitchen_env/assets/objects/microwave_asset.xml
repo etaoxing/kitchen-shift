@@ -22,7 +22,7 @@
     <default>
         <default class="microwave">
             <joint damping="2" frictionloss="2" armature=".01" limited="true"/>
-            <geom conaffinity="0" contype="0" group="1" material="micro_black" type="mesh"/>
+            <geom conaffinity="0" contype="0" group="1" material="micro_black"/>
             <default class="micro_collision">
                 <geom conaffinity="1" condim="4" contype="1" group="4" margin="0.001" material="micro_collision_blue" solimp=".8 .9 .01" solref=".02 1"/>
             </default>

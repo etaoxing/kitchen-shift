@@ -21,7 +21,7 @@
     <default>
         <default class="counters">
             <joint damping="2" frictionloss="2" armature=".01" limited="true"/>
-            <geom conaffinity="0" contype="0" group="1" material="counter_metal" type="mesh"/>
+            <geom conaffinity="0" contype="0" group="1" material="counter_metal"/>
             <default class="counter_collision">
                 <geom conaffinity="1" condim="3" contype="0" group="4" margin="0.001" material="counter_collision_blue"/>
             </default>
