@@ -34,6 +34,12 @@ class Kitchen_v0(gym.Env):
         self.frame_skip = frame_skip
         self.camera_id = camera_id
 
+        # see https://github.com/ARISE-Initiative/robosuite/blob/e0982ca9000fd373bc60781ec9acd1ef29de5beb/robosuite/models/grippers/gripper_tester.py#L195
+        # https://github.com/deepmind/dm_control/blob/87e046bfeab1d6c1ffb40f9ee2a7459a38778c74/dm_control/locomotion/soccer/boxhead.py#L36
+        # http://www.mujoco.org/forum/index.php?threads/gravitational-matrix-calculation.3404/
+        # https://github.com/openai/mujoco-py/blob/4830435a169c1f3e3b5f9b58a7c3d9c39bdf4acb/mujoco_py/mjpid.pyx#L243
+        self.compensate_gravity = compensate_gravity
+
         self.with_obs_ee = with_obs_ee
         self.with_obs_forces = with_obs_forces
         self.rot_use_euler = rot_use_euler  # affects format of with_obs_ee
@@ -181,6 +187,10 @@ class Kitchen_v0(gym.Env):
         a = np.clip(a, -1.0, 1.0)
         if not self.initializing:
             a = self.act_mid + a * self.act_amp  # mean center and scale
+
+        if self.compensate_gravity:
+            self.sim.data.qfrc_applied[:9] = self.sim.data.qfrc_bias[:9]
+
         self.robot.step(
             self, a, step_duration=self.frame_skip * self.model.opt.timestep, mode='velact'
         )
@@ -238,6 +248,9 @@ class Kitchen_v0(gym.Env):
         # get robot qpos from solver_sim and swap in gripper_a
         ja = self.solver_sim.data.qpos[: self.N_DOF_ROBOT].copy()
         ja[7:9] = gripper_a
+
+        if self.compensate_gravity:
+            self.sim.data.qfrc_applied[:9] = self.sim.data.qfrc_bias[:9]
 
         self.robot.step(self, ja, step_duration=self.skip * self.model.opt.timestep, mode='posact')
 
