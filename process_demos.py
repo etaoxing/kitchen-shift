@@ -13,7 +13,7 @@ from tqdm import tqdm
 import kitchen_env
 from kitchen_env.adept_envs.utils.parse_mjl import parse_mjl_logs, viz_parsed_mjl_logs
 
-NUM_WORKERS = 32
+NUM_WORKERS = 16
 ENVS = []  # populated later
 
 DEMO_DIR = 'kitchen_demos_multitask/'
@@ -43,7 +43,7 @@ create_env_fn = functools.partial(
     gym.make,
     'kitchen-v0',
     ctrl_mode='absvel',  # default ctrl mode of demos
-    compensate_gravity=False,
+    compensate_gravity=True,
     with_obs_ee=True,
     with_obs_forces=True,
     rot_use_euler=True,
@@ -247,10 +247,10 @@ def process_demo_split_singleobj(
         t = np.argmax(traj_obj_success)
 
         if not (t - prev_t > 0):
-            if log:
-                print(t, prev_t)
-                print(traj_obj_success)
-                print(d)
+            print('failed on', f)
+            print(t, prev_t)
+            print(traj_obj_success)
+            print(d)
             raise RuntimeError
 
         # save video and singleobj data
