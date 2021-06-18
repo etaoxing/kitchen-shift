@@ -13,7 +13,7 @@ from tqdm import tqdm
 import kitchen_env
 from kitchen_env.adept_envs.utils.parse_mjl import parse_mjl_logs, viz_parsed_mjl_logs
 
-NUM_WORKERS = 2
+NUM_WORKERS = 32
 ENVS = []  # populated later
 
 DEMO_DIR = 'kitchen_demos_multitask/'
@@ -68,7 +68,7 @@ def save_video(render_buffer, filepath):
     vw.release()
 
 
-def render_demo(env, data, use_physics=False):
+def render_demo(env, data, use_physics=False, log=True):
     render_skip = max(1, round(1.0 / (FPS * env.sim.model.opt.timestep * env.frame_skip)))
     t0 = timer.time()
 
@@ -112,7 +112,8 @@ def render_demo(env, data, use_physics=False):
         if i_frame % render_skip == 0:
             curr_frame = env.render(mode='rgb_array', height=RENDER_SIZE[0], width=RENDER_SIZE[1])
             render_buffer.append(curr_frame)
-            print(f'{i_frame}', end=', ', flush=True)
+            if log:
+                print(f'{i_frame}', end=', ', flush=True)
 
         if use_physics:
             path['observations'].append(obs)
@@ -132,8 +133,9 @@ def render_demo(env, data, use_physics=False):
 
         i_frame += 1
 
-    print()
-    print("physics = %i, time taken = %f" % (use_physics, timer.time() - t0))
+    if log:
+        print()
+        print("physics = %i, time taken = %f" % (use_physics, timer.time() - t0))
 
     if use_physics:
         # path['observations'] = np.vstack(path['observations'])
@@ -146,7 +148,9 @@ def render_demo(env, data, use_physics=False):
 def get_task_info(objects_task, objects_done=[]):
     sorted_objects_task = list(sorted(objects_task, key=DEMO_OBJ_ORDER.index))
     sorted_objects_done = list(sorted(objects_done, key=DEMO_OBJ_ORDER.index))
-    task_id = 't-' + ','.join(sorted_objects_task) + '_d-' + ','.join(sorted_objects_done)
+    task_id = 't-' + ','.join(sorted_objects_task)
+    if len(objects_done) > 0:
+        task_id += '_d-' + ','.join(sorted_objects_done)
     return task_id, sorted_objects_task
 
 
@@ -156,6 +160,7 @@ def process_demo(
     view_demo=True,  # view demos (physics ignored)
     playback_demo=True,  # playback demos and get data(physics respected)
     split_singleobj=True,
+    log=True,
 ):
     worker_id = multiprocessing.current_process()._identity
     if worker_id == ():
@@ -169,7 +174,9 @@ def process_demo(
     task_objects = task.split('_')[1:]
     task_id, sorted_objects_task = get_task_info(task_objects, objects_done=[])
     task_id = which_set + '_' + task_id
-    print('worker id', worker_id, filepath, task_id)
+
+    if log:
+        print('worker id', worker_id, filepath, task_id)
 
     os.makedirs(os.path.join(OUT_DIR, task_id), exist_ok=True)
     f = fn.split('.mjl')[0]
@@ -179,12 +186,12 @@ def process_demo(
 
     render_meta = f'-c{CAMERA_ID}h{RENDER_SIZE[0]}w{RENDER_SIZE[1]}.{VIDEO_EXT}'
     if view_demo:
-        render_buffer = render_demo(env, data, use_physics=False)
+        render_buffer = render_demo(env, data, use_physics=False, log=log)
         save_video(render_buffer, outpath + f'_view{render_meta}')
 
     if playback_demo:
         try:
-            render_buffer, path = render_demo(env, data, use_physics=True)
+            render_buffer, path = render_demo(env, data, use_physics=True, log=log)
         except Exception as e:
             print(f'skipped playback {filepath}, {e}')
             return -1
@@ -199,12 +206,19 @@ def process_demo(
             raise RuntimeError
 
         process_demo_split_singleobj(
-            which_set, sorted_objects_task, f, data, render_buffer, render_meta, save_data=save_data
+            which_set,
+            sorted_objects_task,
+            f,
+            data,
+            render_buffer,
+            render_meta,
+            save_data=save_data,
+            log=log,
         )
 
 
 def process_demo_split_singleobj(
-    which_set, sorted_objects_task, f, data, render_buffer, render_meta, save_data=True
+    which_set, sorted_objects_task, f, data, render_buffer, render_meta, save_data=True, log=True
 ):
     prev_t = 0
     for i, o in enumerate(sorted_objects_task):
@@ -228,13 +242,15 @@ def process_demo_split_singleobj(
             i += 1
             # raise RuntimeError
         if i != 1:
-            print(f'increased threshold on {o} to {i}x')
+            if log:
+                print(f'increased threshold on {o} to {i}x')
         t = np.argmax(traj_obj_success)
 
         if not (t - prev_t > 0):
-            print(t, prev_t)
-            print(traj_obj_success)
-            print(d)
+            if log:
+                print(t, prev_t)
+                print(traj_obj_success)
+                print(d)
             raise RuntimeError
 
         # save video and singleobj data
@@ -286,11 +302,13 @@ def process_demos():
     print(f'num demos: {len(demos)}')
     print()
 
-    demos = demos[:2]
+    # demos = list(filter(lambda x: 'friday_microwave_kettle_switch_slide' in x, demos))[:1]
 
     if NUM_WORKERS > 1:
         with multiprocessing.Pool(NUM_WORKERS) as pool:
-            results = tqdm(pool.map(process_demo, demos), total=len(demos))
+            process_demo_fn = functools.partial(process_demo, log=False)
+            results = tqdm(pool.imap(process_demo_fn, demos), total=len(demos))
+            results = list(results)
     else:
         for filepath in tqdm(demos, file=sys.stdout):
             process_demo(filepath)
