@@ -16,7 +16,7 @@
 
 import os, getpass
 import numpy as np
-from termcolor import cprint
+# from termcolor import cprint
 import time
 import copy
 # import click
@@ -59,20 +59,20 @@ class Robot(BaseRobot):
                 # initialize franka
                 self.franka_interface = franka()
                 franka_interface = self.franka_interface
-                cprint(
-                    "Initializing %s Hardware (Status:%d)"
-                    % (self.robot_name, self.franka.okay(self.robot_hardware_dof)),
-                    'white',
-                    'on_grey',
-                )
+                # cprint(
+                #     "Initializing %s Hardware (Status:%d)"
+                #     % (self.robot_name, self.franka.okay(self.robot_hardware_dof)),
+                #     'white',
+                #     'on_grey',
+                # )
             else:
                 self.franka_interface = franka_interface
-                cprint("Reusing previours Franka session", 'white', 'on_grey')
+                # cprint("Reusing previours Franka session", 'white', 'on_grey')
 
         # Robot: Simulation
         else:
             self.robot_name = "Franka"
-            cprint("Initializing %s sim" % self.robot_name, 'white', 'on_grey')
+            # cprint("Initializing %s sim" % self.robot_name, 'white', 'on_grey')
 
         # Robot's time
         self.time_start = time.time()
@@ -93,7 +93,7 @@ class Robot(BaseRobot):
         self.robot_pos_noise_amp = np.zeros(self.n_dofs, dtype=float)
         self.robot_vel_noise_amp = np.zeros(self.n_dofs, dtype=float)
 
-        print("Reading configurations for %s" % self.robot_name)
+        # print("Reading configurations for %s" % self.robot_name)
         for i in range(self.n_dofs):
             self.robot_mode[i] = read_config_from_node(root, "qpos" + str(i), "mode", int)
             self.robot_mj_dof[i] = read_config_from_node(root, "qpos" + str(i), "mj_dof", int)
@@ -283,12 +283,13 @@ class Robot(BaseRobot):
 
     def close(self):
         if self.is_hardware:
-            cprint("Closing Franka hardware... ", 'white', 'on_grey', end='', flush=True)
+            # cprint("Closing Franka hardware... ", 'white', 'on_grey', end='', flush=True)
             status = 0
             raise NotImplementedError()
-            cprint("Closed (Status: {})".format(status), 'white', 'on_grey', flush=True)
+            # cprint("Closed (Status: {})".format(status), 'white', 'on_grey', flush=True)
         else:
-            cprint("Closing Franka sim", 'white', 'on_grey', flush=True)
+            pass
+            # cprint("Closing Franka sim", 'white', 'on_grey', flush=True)
 
     # enforce velocity sepcs.
     # ALERT: This depends on previous observation. This is not ideal as it breaks MDP addumptions. Be careful
