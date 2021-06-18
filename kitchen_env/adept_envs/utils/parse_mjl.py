@@ -8,7 +8,7 @@ import struct
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import click
+# import click
 
 # parse mjl binary logs into python dictionary
 def parse_mjl_logs(read_filename, skipamount):
@@ -74,21 +74,21 @@ def viz_parsed_mjl_logs(data):
 
 
 
-# MAIN =========================================================
-@click.command(help=DESC)
-@click.option('--log', '-l', type=str, help='.mjl log to parse', required= True)
-@click.option('--skip', '-s', type=int, help='number of frames to skip (1:no skip)', default=1)
-@click.option('--plot', '-p', type=bool, help='plot parsed logs', default=False)
-def main(log, skip, plot):
-    print("Loading log file: %s" % log)
-    data = parse_mjl_logs(log, skip)
-    print("file successfully parsed")
-
-
-    if(plot):
-        print("plotting data")
-        viz_parsed_mjl_logs(data)
-
-
-if __name__ == '__main__':
-    main()
+# # MAIN =========================================================
+# @click.command(help=DESC)
+# @click.option('--log', '-l', type=str, help='.mjl log to parse', required= True)
+# @click.option('--skip', '-s', type=int, help='number of frames to skip (1:no skip)', default=1)
+# @click.option('--plot', '-p', type=bool, help='plot parsed logs', default=False)
+# def main(log, skip, plot):
+#     print("Loading log file: %s" % log)
+#     data = parse_mjl_logs(log, skip)
+#     print("file successfully parsed")
+# 
+# 
+#     if(plot):
+#         print("plotting data")
+#         viz_parsed_mjl_logs(data)
+# 
+# 
+# if __name__ == '__main__':
+#     main()

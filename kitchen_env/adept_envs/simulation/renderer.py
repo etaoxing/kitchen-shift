@@ -23,7 +23,8 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from adept_envs.simulation import module
+# from adept_envs.simulation import module
+from . import module
 
 # Default window dimensions.
 DEFAULT_WINDOW_WIDTH = 1024

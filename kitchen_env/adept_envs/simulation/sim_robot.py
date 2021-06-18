@@ -19,9 +19,10 @@
 import os
 from typing import Dict, Optional
 
-from adept_envs.simulation import module
-from adept_envs.simulation.renderer import DMRenderer, MjPyRenderer, RenderMode
-
+# from adept_envs.simulation import module
+from . import module
+# from adept_envs.simulation.renderer import DMRenderer, MjPyRenderer, RenderMode
+from .renderer import DMRenderer, MjPyRenderer, RenderMode
 
 def get_mjlib(use_dm_backend):
     """Returns an object that exposes the low-level MuJoCo API."""

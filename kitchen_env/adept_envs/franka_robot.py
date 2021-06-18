@@ -19,7 +19,7 @@ import numpy as np
 from termcolor import cprint
 import time
 import copy
-import click
+# import click
 
 from .base_robot import BaseRobot
 from .utils.config import get_config_root_node, read_config_from_node
