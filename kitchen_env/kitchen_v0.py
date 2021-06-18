@@ -244,7 +244,8 @@ class Kitchen_v0(gym.Env):
     def reset(self):
         self.sim.reset()
         self.sim.forward()
-        self.reset_model()
+        obs = self.reset_model()
+        return obs
 
     def reset_model(self):
         reset_pos = self.init_qpos[:].copy()
@@ -307,3 +308,41 @@ class Kitchen_v0(gym.Env):
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
+
+
+class DomainRandomizationMujocoWrapper(gym.Env):
+    """
+    Mujoco does not support runtime modification of the environment, it can only load from a
+    static XML. We have to modify the XML and reload it for changes to propogate to the sim.
+
+    see https://github.com/deepmind/dm_control/issues/54
+    https://github.com/deepmind/dm_control/issues/125
+    http://mujoco.org/forum/index.php?threads/programatically-creating-the-bodies.3805/#post-4940
+    """
+
+    def __init__(self):
+        pass
+
+    def change_microwave(self, microwave_id):
+        pass
+
+    def change_kettle(self, kettle_id):
+        pass
+
+    def change_light(self, light_params):
+        # position
+        # intensity
+        # rotation
+        pass
+
+    def change_objects_layout(self):
+        pass
+
+    def change_camera(self):
+        pass
+
+    def change_robot_start_layout(self):
+        pass
+
+    def reload_with_changes(self):
+        pass
