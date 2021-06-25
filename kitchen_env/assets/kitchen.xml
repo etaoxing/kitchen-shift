@@ -17,16 +17,14 @@
     <include file="objects/microwave_asset.xml"/>
     <include file="objects/kettle_asset.xml"/>
 
-    <!-- <visual>
-    <global offwidth="2560" offheight="1920" />
-    <quality shadowsize="4096" offsamples="8" />
-    <map force="0.1" fogend="5" />
-    </visual> -->
-
-    <!-- revert to defaults, see https://github.com/deepmind/dm_control/blob/30069ac11b60ee71acbd9159547d0bc334d63281/dm_control/_render/pyopengl/osmesa_renderer_test.py#L30 -->
+    <!-- change this if you want to render at higher resolutions -->
     <visual>
+        <!-- <global offwidth="2560" offheight="1920" /> -->
+        <!-- <quality shadowsize="4096" offsamples="8" /> -->
+
         <global offwidth="640" offheight="480" />
         <quality shadowsize="1024" offsamples="4" />
+
         <!-- <map force="0.1" fogend="5" /> -->
     </visual>
 
