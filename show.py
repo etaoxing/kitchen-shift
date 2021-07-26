@@ -30,6 +30,7 @@ domain_params = (
         for i in ['white_marble_tile', 'marble1', 'tile1', 'wood1', 'wood2']
     ]
     + [[('change_counter_texture', i)] for i in ['white_marble_tile2', 'tile1', 'wood1', 'wood2']]
+    + [[('change_noise_ratio', i)] for i in [0.0, 1.0]]
 )
 
 

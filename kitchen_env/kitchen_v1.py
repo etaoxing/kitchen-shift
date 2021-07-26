@@ -59,19 +59,31 @@ class Kitchen_v1(gym.Env):
         self.model_xml = open(self.model_path, 'r').read()
 
         self.render_size = render_size
-        if render_size is not None:
-            # swap in render buffer size
-            height = self.render_size[0]
-            width = self.render_size[1]
-            self.model_xml = self.model_xml.replace(
-                '<global offwidth="640" offheight="480" />',
-                f'<global offwidth="{height}" offheight="{width}" />',
-            )
-            # NOTE: if using larger render sizes, probably want to scale up shadow quality as well
+        # if render_size is not None:
+        #     # swap in render buffer size
+        #     height = self.render_size[0]
+        #     width = self.render_size[1]
+        #     self.model_xml = self.model_xml.replace(
+        #         '<global offwidth="640" offheight="480" />',
+        #         f'<global offwidth="{height}" offheight="{width}" />',
+        #     )
+        #     # NOTE: if using larger render sizes, probably want to scale up shadow quality as well
 
-        if robot == 'franka2':
-            # swap in <include file="franka2/actuator0.xml"/> and <include file="franka2/franka_panda.xml"/
+        if robot == 'franka':
+            pass
+        elif robot == 'franka2':
+            self.model_xml = self.model_xml.replace(
+                '<include file="franka/actuator0.xml"/>',
+                '<include file="franka2/actuator0.xml"/>',
+            )
+            self.model_xml = self.model_xml.replace(
+                '<include file="franka/franka_panda.xml"/',
+                '<include file="franka2/franka_panda.xml"/>',
+            )
+        elif robot == 'xarm7':
             raise NotImplementedError
+        else:
+            raise ValueError
 
         # mujoco.Physics.from_xml_string messes up asset paths
         # mjcf.from_xml_string doesn't seem to support the same xml parsing as the actual mjlib
@@ -95,6 +107,14 @@ class Kitchen_v1(gym.Env):
 
         if self.ctrl_mode == 'absvel':
             action_dim = self.N_DOF_ROBOT
+
+            self.act_mid = np.zeros(action_dim)
+            self.act_amp = 2.0 * np.ones(action_dim)
+        elif self.ctrl_mode == 'abspos':
+            action_dim = self.N_DOF_ROBOT
+
+            self.act_mid = np.zeros(action_dim)
+            self.act_amp = 3.0 * np.ones(action_dim)
         elif self.ctrl_mode == 'mocapik':
             # with mocapik, we follow robogym and robosuite by spawning a separate simulator
             self.mocapid = None  # set later since sim is not yet initialized
@@ -116,16 +136,12 @@ class Kitchen_v1(gym.Env):
             raise ValueError
 
         self.action_space = gym.spaces.Box(-1.0, 1.0, shape=(action_dim,))
-        self.act_mid = np.zeros(action_dim)
-        self.act_amp = 2.0 * np.ones(action_dim)
 
         obs_space = {
             k: spaces.Box(low=-np.inf, high=np.inf, shape=v.shape, dtype=np.float32)
             for k, v in self._get_obs_dict().items()
         }
         self.observation_space = spaces.Dict(obs_space)
-
-        self.seed()
 
     def load_sim(self, xml_string):
         with tempfile.NamedTemporaryFile(mode='w+', dir=self.model_dir) as f:
@@ -163,7 +179,7 @@ class Kitchen_v1(gym.Env):
     def physics(self):
         return self.sim
 
-    def _get_obs_dict(self, with_noise=True):
+    def _get_obs_dict(self, with_noise=True, robot_cache_obs=False):
         # Gather simulated observation
         robot_qp = self.sim.data.qpos[: self.N_DOF_ROBOT].copy()
         robot_qv = self.sim.data.qvel[: self.N_DOF_ROBOT].copy()
@@ -203,13 +219,14 @@ class Kitchen_v1(gym.Env):
             'obj_qv': obj_qv,
         }
 
-        self.robot.cache_obs(robot_qp, robot_qv)
-
         # TODO: add noise
         if self.with_obs_ee:
             obs_dict['ee_qp'] = get_obs_ee(self.sim, self.rot_use_euler)
         if self.with_obs_forces:
             obs_dict['ee_forces'] = get_obs_forces(self.sim)
+
+        if robot_cache_obs:
+            self.robot.cache_obs(robot_qp, robot_qv)
 
         # cast to float32
         for k, v in obs_dict.items():
@@ -230,14 +247,19 @@ class Kitchen_v1(gym.Env):
             self.sim.step()
 
     def step(self, action):
+        # if getting dm_control.rl.control.PhysicsError: Physics state is invalid. Warning(s) raised: mjWARN_BADCTRL
+        # then probably passing in nans, https://github.com/deepmind/dm_control/issues/99
+
         if self.ctrl_mode == 'absvel':
             self._step_absvel(action)
+        elif self.ctrl_mode == 'abspos':
+            self._step_abspos(action)
         elif self.ctrl_mode == 'mocapik':
             self._step_mocapik(action)
         else:
             raise RuntimeError(f"Unsupported ctrl_mode: {self.ctrl_mode}")
 
-        obs = self._get_obs_dict(with_noise=True)
+        obs = self._get_obs_dict(with_noise=True, robot_cache_obs=True)
         done = False
         reward = 0.0
         env_info = {}
@@ -252,6 +274,15 @@ class Kitchen_v1(gym.Env):
             self.sim.data.qfrc_applied[:9] = self.sim.data.qfrc_bias[:9]
 
         self.robot.step(self, a, self.frame_skip, mode='velact')
+
+    def _step_abspos(self, a):
+        a = np.clip(a, -1.0, 1.0)
+        a = self.act_mid + a * self.act_amp  # mean center and scale
+
+        if self.compensate_gravity:
+            self.sim.data.qfrc_applied[:9] = self.sim.data.qfrc_bias[:9]
+
+        self.robot.step(self, a, self.frame_skip, mode='posact')
 
     def _step_mocapik(self, a):
         a = np.clip(a, -1.0, 1.0)
@@ -313,15 +344,18 @@ class Kitchen_v1(gym.Env):
         self.robot.step(self, ja, self.frame_skip, mode='posact')
 
     def reset(self, objects_done_set=None):
+        self.sim.reset()
+        self.sim.forward()
+
         if objects_done_set is not None:
             reset_qpos = self.init_qpos[:].copy()
             for element in objects_done_set:
                 reset_qpos[OBS_ELEMENT_INDICES[element]] = OBS_ELEMENT_GOALS[element][:].copy()
-            obs = self.reset_model(reset_qpos=reset_qpos)
         else:
-            obs = self.reset_model()
+            reset_qpos = None
 
-        obs = self._get_obs_dict(with_noise=True)
+        obs = self.reset_model(reset_qpos=reset_qpos)
+        obs = self._get_obs_dict(with_noise=True, robot_cache_obs=True)
         return obs
 
     def reset_model(self, reset_qpos=None):
@@ -336,16 +370,18 @@ class Kitchen_v1(gym.Env):
         reset_qpos[: self.N_DOF_ROBOT] = self.robot.enforce_position_limits(
             reset_qpos[: self.N_DOF_ROBOT]
         )
-        reset_qvel[: self.N_DOF_ROBOT] = self.robot.enforce_velocity_limits(
-            reset_qvel[: self.N_DOF_ROBOT]
-        )
+        # reset_qvel[: self.N_DOF_ROBOT] = self.robot.enforce_velocity_limits(
+        #     reset_qvel[: self.N_DOF_ROBOT]
+        # )
 
         self.sim.reset()
+        # reset robot
         self.sim.data.qpos[: self.N_DOF_ROBOT] = reset_qpos[: self.N_DOF_ROBOT].copy()
         self.sim.data.qvel[: self.N_DOF_ROBOT] = reset_qvel[: self.N_DOF_ROBOT].copy()
-
+        # reset objects
         self.sim.data.qpos[-self.N_DOF_OBJECT :] = reset_qpos[-self.N_DOF_OBJECT :].copy()
         self.sim.data.qvel[-self.N_DOF_OBJECT :] = reset_qvel[-self.N_DOF_OBJECT :].copy()
+        self.sim.forward()
 
         reset_mocap_welds(self.sim)
         self.sim.forward()

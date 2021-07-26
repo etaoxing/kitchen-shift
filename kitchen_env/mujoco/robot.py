@@ -22,6 +22,8 @@ class Robot:
             ctrl_feasible = self.ctrl_velocity_limits_velact(ctrl, step_duration)
         elif mode == 'posact':
             ctrl_feasible = self.ctrl_velocity_limits_posact(ctrl, step_duration)
+        else:
+            raise ValueError
 
         # enforce position limits
         ctrl_feasible = self.enforce_position_limits(ctrl_feasible)

@@ -34,6 +34,8 @@ parser.add_argument(
     default='kitchen-v1',
     type=str,
 )
+parser.add_argument('--ROBOT', default='franka', type=str)
+parser.add_argument('--CTRL_MODE', default='absvel')
 parser.add_argument('--FPS', default=30.0, type=float)
 parser.add_argument('--FRAME_SKIP', default=40, type=int)
 parser.add_argument(
@@ -71,11 +73,12 @@ args.VIDEO_EXT = 'avi'
 # sim params unrelated to rendering
 env_kwargs = dict(
     frame_skip=args.FRAME_SKIP,
-    ctrl_mode='absvel',  # default ctrl mode of demos
+    ctrl_mode=args.CTRL_MODE,
     # compensate_gravity=True,
     with_obs_ee=True,
     with_obs_forces=True,
     rot_use_euler=True,
+    robot=args.ROBOT,
     #
     # noise_ratio=0.1,
     # object_pos_noise_amp=0.1,
@@ -111,7 +114,7 @@ def save_video(render_buffer, filepath):
 
 
 def render_demo(env, data, use_physics=False, log=True):
-    render_skip = max(1, round(1.0 / (args.FPS * env.sim.model.opt.timestep * env.frame_skip)))
+    # render_skip = max(1, round(1.0 / (args.FPS * env.sim.model.opt.timestep * env.frame_skip)))
     t0 = timer.time()
 
     init_qpos = data['qpos'][0].copy()
@@ -151,7 +154,8 @@ def render_demo(env, data, use_physics=False, log=True):
             env.sim.data.qvel[:] = data['qvel'][i_frame].copy()
             env.sim.forward()
 
-        if i_frame % render_skip == 0:
+        # if i_frame % render_skip == 0:
+        if True:
             curr_frame = env.render(
                 mode='rgb_array', height=args.RENDER_SIZE[0], width=args.RENDER_SIZE[1]
             )
@@ -174,8 +178,15 @@ def render_demo(env, data, use_physics=False, log=True):
                 )
                 act = (ctrl - env.act_mid) / env.act_amp
                 act = np.clip(act, -0.999, 0.999)
+            elif env.ctrl_mode == 'abspos':
+                ctrl = data['ctrl'][i_frame]
+                act = (ctrl - env.act_mid) / env.act_amp
+                act = np.clip(act, -0.999, 0.999)
             else:
                 raise RuntimeError
+
+            # TODO:
+            # - converting demo to other action spaces / instantations of the env
 
             next_obs, reward, done, env_info = env.step(act)
 
@@ -407,7 +418,7 @@ def process_demo_split_singleobj(
 
         # save video and singleobj data
         save_video(
-            render_buffer[prev_t : t + args.SINGLEOBJ_TIME_EPS],
+            render_buffer[prev_t : t + args.SINGLEOBJ_TIME_EPS + 1],
             outpath + f'_singleobj_playback{render_meta}',
         )
 
@@ -416,7 +427,7 @@ def process_demo_split_singleobj(
             for k, v in data.items():
                 if k == 'path':
                     p = dict(
-                        observations=v['observations'][prev_t : t + args.SINGLEOBJ_TIME_EPS],
+                        observations=v['observations'][prev_t : t + args.SINGLEOBJ_TIME_EPS + 1],
                         actions=v['actions'][prev_t : t + args.SINGLEOBJ_TIME_EPS],
                     )
                     singleobj_data[k] = p
@@ -500,6 +511,3 @@ if __name__ == '__main__':
         multiprocessing.set_start_method('fork')
 
     process_demos()
-
-    # TODO:
-    # - converting demo to different action space / env settings
