@@ -34,7 +34,7 @@ parser.add_argument(
     default='kitchen-v1',
     type=str,
 )
-parser.add_argument('--ROBOT', default='franka', type=str)
+parser.add_argument('--ROBOT', default='franka2', type=str)
 parser.add_argument('--CTRL_MODE', default='absvel')
 parser.add_argument('--FPS', default=30.0, type=float)
 parser.add_argument('--FRAME_SKIP', default=40, type=int)
