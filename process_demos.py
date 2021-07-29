@@ -94,13 +94,13 @@ create_env_fn = functools.partial(
 )
 
 
-DEMO_OBJ_ORDER = ['microwave', 'kettle', 'bottomknob', 'topknob', 'switch', 'slide', 'hinge']
 from kitchen_env.constants import (
     ORIG_OBS_ELEMENT_INDICES,
     OBS_ELEMENT_INDICES,
     OBS_ELEMENT_GOALS,
     ORIG_FRANKA_INIT_QPOS,
 )
+from kitchen_env.utils import get_task_info
 
 
 def save_video(render_buffer, filepath):
@@ -225,15 +225,6 @@ def render_demo(env, data, use_physics=False, log=True):
         return render_buffer, path
     else:
         return render_buffer
-
-
-def get_task_info(objects_task, objects_done=[]):
-    sorted_objects_task = list(sorted(objects_task, key=DEMO_OBJ_ORDER.index))
-    sorted_objects_done = list(sorted(objects_done, key=DEMO_OBJ_ORDER.index))
-    task_id = 't-' + ','.join(sorted_objects_task)
-    if len(objects_done) > 0:
-        task_id += '_d-' + ','.join(sorted_objects_done)
-    return task_id, sorted_objects_task
 
 
 def swap_obj_indices(data):

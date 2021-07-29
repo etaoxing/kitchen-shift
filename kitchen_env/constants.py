@@ -129,3 +129,5 @@ INIT_QPOS = {
 
 # see Appendix B of RPL
 BONUS_THRESH = 0.3
+
+DEMO_OBJ_ORDER = ['microwave', 'kettle', 'bottomknob', 'topknob', 'switch', 'slide', 'hinge']
