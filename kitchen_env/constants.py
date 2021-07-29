@@ -73,7 +73,6 @@ OBS_ELEMENT_GOALS = {
     'topknobr': np.array([-0.92, -0.01]),
 }
 
-
 # fmt: off
 ORIG_FRANKA_INIT_QPOS = np.array([1.48388023e-01, -1.76848573e+00,  1.84390296e+00, -2.47685760e+00,
                                   2.60252026e-01,  7.12533105e-01,  1.59515394e+00,  4.79267505e-02,
@@ -127,3 +126,6 @@ INIT_QPOS = {
         ]
     ),
 }
+
+# see Appendix B of RPL
+BONUS_THRESH = 0.3
