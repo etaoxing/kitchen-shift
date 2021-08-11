@@ -1,0 +1,22 @@
+<include>
+
+    <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
+
+    <asset>
+        <mesh file="meshes/objects/trashbin.stl" name="trashbin" scale="0.0075 0.0075 0.0075"/>
+
+        <texture name="T_trashbin_metal" type="cube" height="1" width="1" file="textures/metal1.png" />
+        <material name="trashbin_metal" texture="T_trashbin_metal" texrepeat="3 3" reflectance="0.7" texuniform="false" />
+        <material name="trashbin_collision_blue" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0"/>
+    </asset>
+
+    <default>
+        <default class="trashbin">
+            <joint damping="2" frictionloss="2" armature=".01" limited="true" />
+            <geom conaffinity="0" contype="0" group="1" material="trashbin_metal"/>
+            <default class="trashbin_collision">
+                <geom conaffinity="1" condim="4" contype="1" group="4" margin="0.001" material="trashbin_collision_blue" solimp=".8 .9 .01" solref=".02 1"/>
+            </default>
+        </default>
+    </default>
+</include>

@@ -1,0 +1,11 @@
+<include>
+    <body name="trashbinroot" childclass="trashbin">
+        <geom type="mesh" mesh="trashbin"/>
+        <geom type="box" pos="-.12 0 .2" size=".01 .147 .2" euler="0 -0.0872665 0" mass="0.02" class="trashbin_collision"/>
+        <geom type="box" pos=".12 0 .2" size=".01 .147 .2" euler="0 0.0872665 0" mass="0.02" class="trashbin_collision"/>
+        <geom type="box" pos="0 -.12 .2" size=".01 .147 .2" euler="0.0872665 0 1.57" mass="0.02" class="trashbin_collision"/>
+        <geom type="box" pos="0 .12 .2" size=".01 .147 .2" euler="-0.0872665 0 1.57" mass="0.02" class="trashbin_collision"/>
+        <geom type="box" pos="0 0 .05" size=".1 .1 .005" mass="0.02" class="trashbin_collision"/>
+        <site type="sphere" name="trashbin_site" pos="0 0 0.259" size=".01" group="3" rgba="1 0 0 1"/>
+    </body>
+</include>

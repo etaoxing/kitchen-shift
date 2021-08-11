@@ -39,6 +39,11 @@
         <!-- <weld body1="vive_controller" body2="panda0_link7" solref="0.02 1" solimp=".4 .85 .1"/> -->
     </equality>
 
+    <!-- xarm -->
+    <!-- <equality>
+        <weld body1="mocap" body2="link7" solref="0.2 1"></weld>
+    </equality> -->
+
     <worldbody>
         <!-- Mocap -->
         <!-- <body name="vive_controller" mocap="true" pos="0 0 2.89" euler="-1.57 0 -.785"> -->
@@ -58,6 +63,9 @@
             </body>
             <body name="oven" pos="0 0 0">
                 <include file="objects/chains/oven_chain.xml"/>
+            </body>
+            <body name="ovenhood" pos="0 0 0">
+                <include file="objects/chains/ovenhood_chain.xml"/>
             </body>
             <body name="backwall" pos="0 0 0">
                 <include file="objects/chains/backwall_chain.xml"/>

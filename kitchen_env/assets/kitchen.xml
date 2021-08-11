@@ -5,9 +5,12 @@
     <!-- <option timestep="0.002"/> -->
     <size njmax='1000' nconmax='1000'/>
 
-    <!-- <include file="franka/actuator0.xml"/> -->
-    <include file="franka2/actuator0.xml"/>
+    <include file="franka/actuator0.xml"/>
+    <!-- <include file="franka2/actuator0.xml"/> -->
     <include file="franka/franka_panda_headers.xml"/>
+
+    <!-- <include file="xarm7/actuator0.xml"/>
+    <include file="xarm7/xarm7_headers.xml"/> -->
 
     <include file="objects/oven_asset.xml"/>
     <include file="objects/counters_asset.xml"/>
@@ -16,6 +19,7 @@
     <include file="objects/hingecabinet_asset.xml"/>
     <include file="objects/microwave_asset.xml"/>
     <include file="objects/kettle_asset.xml"/>
+    <!-- <include file="objects/trashbin_asset.xml"/> -->
 
     <!-- change this if you want to render at higher resolutions -->
     <visual>
@@ -34,8 +38,6 @@
 
         <!-- <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" markrgb='.1 .1 .1' mark='random' random='.05'/> -->
         <texture name="texplane" type="2d" height="1" width="1" file="textures/white_marble_tile2.png"/>
-        <!-- <texture name="texplane" type="2d" height="1" width="1" file="textures/floor/floor18.png" mark='edge' markrgb='0 0 0'/> -->
-        <!-- <texture name="texplane" type="2d" height="1" width="1" file="textures/floor/floor6.png" mark='edge' markrgb='0 0 0'/> -->
         <material name='MatPlane' reflectance='0.05' texture="texplane" texrepeat="4 4" texuniform="true"/>
     </asset>
 
@@ -53,11 +55,14 @@
         <!-- Robot -->
         <body pos='0. 0 1.8' euler='0 0 1.57'>
             <geom type='cylinder' size='.120 .90' pos='-.04 0 -0.90' class='panda_viz'/>
-            <!-- <include file="franka/franka_panda.xml"/> -->
-            <include file="franka2/franka_panda.xml"/>
+            <include file="franka/franka_panda.xml"/>
+            <!-- <include file="franka2/franka_panda.xml"/> -->
         </body>
 
-        <!-- <include file="franka/franka_panda.xml"/> -->
+        <!-- <body pos='0. 0 1.8' euler='0 0 1.57'>
+            <geom type='cylinder' size='.120 .90' pos='-.04 0 -0.90' class='xarm_viz'/>
+            <include file="xarm7/xarm7.xml"/>
+        </body> -->
 
         <body name='desk' pos='-0.1 0.75 0'>
             <body name="counters1" pos="0 0 0">
@@ -65,6 +70,9 @@
             </body>
             <body name="oven" pos="0 0 0">
                 <include file="objects/chains/oven_chain.xml"/>
+            </body>
+            <body name="ovenhood" pos="0 0 0">
+                <include file="objects/chains/ovenhood_chain.xml"/>
             </body>
             <body name="backwall" pos="0 0 0">
                 <include file="objects/chains/backwall_chain.xml"/>
@@ -85,10 +93,15 @@
             <include file="objects/chains/kettle_chain0.xml"/>
         </body>
 
+        <!-- TODO: add collision geoms for trashbin -->
+        <!-- <body name="trashbin" pos="0.5 0.35 2.5" euler="1.57 0 0">
+            <include file="objects/chains/trashbin_chain.xml"/>
+        </body> -->
+
     </worldbody>
 
-    <keyframe>
+    <!-- <keyframe>
         <key qpos='0.16 -1.76 1.84 -2.51 0.36 0.79 1.55 0.00 0.0 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 8.24417e-05 9.48283e-05 0 0 0 0 -0.269 0.35 1.61523 1 1.34939e-19 -3.51612e-05 -7.50168e-19'/>
-    </keyframe>
+    </keyframe> -->
 
 </mujoco>
