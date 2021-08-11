@@ -1,11 +1,13 @@
 import os
 from dm_control import mujoco
+from dm_control import mjcf
 from dm_control.mujoco import engine
 from dm_control.utils import inverse_kinematics
 import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+import tempfile
 
 from .adept_envs.franka_robot import Robot
 from .adept_envs.simulation.renderer import DMRenderer
@@ -25,14 +27,13 @@ class Kitchen_v0(gym.Env):
         ctrl_mode='absvel',
         compensate_gravity=False,
         frame_skip=40,
-        camera_id=7,
+        camera_id=6,
         with_obs_ee=False,
         with_obs_forces=False,
         rot_use_euler=False,
     ):
         self.ctrl_mode = ctrl_mode
         self.frame_skip = frame_skip
-        self.camera_id = camera_id
 
         # see https://github.com/ARISE-Initiative/robosuite/blob/e0982ca9000fd373bc60781ec9acd1ef29de5beb/robosuite/models/grippers/gripper_tester.py#L195
         # https://github.com/deepmind/dm_control/blob/87e046bfeab1d6c1ffb40f9ee2a7459a38778c74/dm_control/locomotion/soccer/boxhead.py#L36
@@ -50,6 +51,43 @@ class Kitchen_v0(gym.Env):
         # NOTE: this is actually getting multiplied by values in franka_config.xml, so it's 10% of the actual noise specified,
         # see https://github.com/google-research/relay-policy-learning/blob/cd70ac9334f584f86db281a1ffd3e5cbc3e5e293/adept_envs/adept_envs/franka/robot/franka_robot.py#L155
         self.robot_noise_ratio = 0.1  # 10% as per robot_config specs
+
+        # self.model_dir = os.path.join(os.path.dirname(__file__), 'assets_old/')
+        # self.model_path = os.path.join(self.model_dir, 'franka_kitchen_jntpos_act_ab.xml')
+        self.model_dir = os.path.join(os.path.dirname(__file__), 'assets/')
+        self.model_path = os.path.join(self.model_dir, 'kitchen.xml')
+        self.model_xml = open(self.model_path, 'r').read()
+
+        # mujoco.Physics.from_xml_string messes up asset paths
+        # mjcf.from_xml_string doesn't seem to support the same xml parsing as the actual mjlib
+        # to circumvent these issues, in order to dynamically change the env and reload the xml,
+        # we write the xml string to a temporary xml file located in self.model_dir
+        #
+        # self.sim = mujoco.Physics.from_xml_string(self.model_xml)
+        # self.sim = mjcf.from_xml_string(model_xml, model_dir=self.model_dir)
+        # self.sim = mujoco.Physics.from_xml_path(self.model_path)
+        # _patch_mjlib_accessors(self.model, self.sim.data, True)
+        # print(self.model_xml)
+        self.load_sim(self.model_xml)
+        self.set_camera_id(camera_id)
+
+        # from adept_env
+        self.seed()
+        # self.initializing = True
+        self.robot = Robot(
+            self.N_DOF_ROBOT,
+            self.N_DOF_OBJECT,
+            calibration_path=os.path.join(
+                os.path.dirname(__file__), 'adept_envs/franka_config.xml'
+            ),
+        )
+        self.init_qpos = self.data.qpos.ravel().copy()
+        self.init_qvel = self.data.qvel.ravel().copy()
+        # # initializing and step from adept_envs.RobotEnv and adept_envs.MujocoEnv
+        # observation, _reward, done, _info = self.step(np.zeros(9))
+        self.initializing = False
+        self.set_init_qpos(FRANKA_INIT_QPOS.copy())
+        # self.init_qvel = self.sim.model.key_qvel[0].copy()  # this should be np.zeros(29)
 
         if self.ctrl_mode == 'absvel':
             action_dim = 9
@@ -69,40 +107,9 @@ class Kitchen_v0(gym.Env):
             self.pos_range = 0.075  # allow larger change
             self.rot_range = 0.075
             self._create_solver_sim()
+            # TODO: if using worldgen, then need to propogate changes to solver_sim
         else:
             raise ValueError
-
-        model_path = os.path.join(os.path.dirname(__file__), 'assets/kitchen.xml')
-        self.sim = mujoco.Physics.from_xml_path(model_path)
-
-        # from adept_env
-        self._seed()
-        _patch_mjlib_accessors(self.model, self.sim.data, True)
-        # self.initializing = True
-        self.init_qpos = self.data.qpos.ravel().copy()
-        self.init_qvel = self.data.qvel.ravel().copy()
-        self.robot = Robot(
-            self.N_DOF_ROBOT,
-            self.N_DOF_OBJECT,
-            calibration_path=os.path.join(
-                os.path.dirname(__file__), 'adept_envs/franka_config.xml'
-            ),
-        )
-        # # initializing and step from adept_envs.RobotEnv and adept_envs.MujocoEnv
-        # observation, _reward, done, _info = self.step(np.zeros(9))
-        self.initializing = False
-        self.renderer = DMRenderer(self.sim, camera_settings=CAMERAS[camera_id])
-
-        # fmt: off
-        self.init_qpos = np.array([ 1.48388023e-01, -1.76848573e+00,  1.84390296e+00, -2.47685760e+00,
-                                    2.60252026e-01,  7.12533105e-01,  1.59515394e+00,  4.79267505e-02,
-                                    3.71350919e-02, -2.66279850e-04, -5.18043486e-05,  3.12877220e-05,
-                                   -4.51199853e-05, -3.90842156e-06, -4.22629655e-05,  6.28065475e-05,
-                                    4.04984708e-05,  4.62730939e-04, -2.26906415e-04, -4.65501369e-04,
-                                   -6.44129196e-03, -1.77048263e-03,  1.08009684e-03, -2.69397440e-01,
-                                    3.50383255e-01,  1.61944683e+00,  1.00618764e+00,  4.06395120e-03,
-                                   -6.62095997e-03, -2.68278933e-04])
-        # fmt: on
 
         self.action_space = gym.spaces.Box(-1.0, 1.0, shape=(action_dim,))
         self.act_mid = np.zeros(action_dim)
@@ -113,6 +120,23 @@ class Kitchen_v0(gym.Env):
             for k, v in self._get_obs_dict().items()
         }
         self.observation_space = spaces.Dict(obs_space)
+
+    def load_sim(self, xml_string):
+        with tempfile.NamedTemporaryFile(mode='w+', dir=self.model_dir) as f:
+            f.write(xml_string)
+            f.flush()
+            self.sim = mujoco.Physics.from_xml_path(f.name)
+
+        _patch_mjlib_accessors(self.model, self.sim.data, True)
+
+    def set_camera_id(self, camera_id):
+        self.camera_id = camera_id
+        self.renderer = DMRenderer(self.sim, camera_settings=CAMERAS[self.camera_id])
+        # self.solver_sim_renderer = DMRenderer(
+        #                 self.solver_sim, camera_settings=CAMERAS[self.camera_id])
+
+    def set_init_qpos(self, qpos):
+        self.init_qpos = qpos
 
     @property
     def skip(self):
@@ -157,9 +181,6 @@ class Kitchen_v0(gym.Env):
         self.solver_sim = mujoco.Physics.from_xml_path(model_path)
         _patch_mjlib_accessors(self.solver_sim.model, self.solver_sim.data, True)
 
-        # self.solver_sim_renderer = DMRenderer(
-        #                 self.solver_sim, camera_settings=CAMERAS[self.camera_id])
-
     # from adept_envs.mujoco_env.MujocoEnv
     def do_simulation(self, ctrl, n_frames):
         for i in range(self.model.nu):
@@ -169,17 +190,17 @@ class Kitchen_v0(gym.Env):
             self.sim.step()
 
     def step(self, action):
-        obs = self._get_obs_dict()
-        done = False
-        reward = 0.0
-        env_info = {}
-
         if self.ctrl_mode == 'absvel':
             self._step_absvel(action)
         elif self.ctrl_mode == 'mocapik':
             self._step_mocapik(action)
         else:
             raise RuntimeError(f"Unsupported ctrl_mode: {self.ctrl_mode}")
+
+        obs = self._get_obs_dict()
+        done = False
+        reward = 0.0
+        env_info = {}
 
         return obs, done, reward, env_info
 
@@ -254,16 +275,27 @@ class Kitchen_v0(gym.Env):
 
         self.robot.step(self, ja, step_duration=self.skip * self.model.opt.timestep, mode='posact')
 
-    def reset(self):
+    def reset(self, objects_done_set=None):
         self.sim.reset()
         self.sim.forward()
-        obs = self.reset_model()
+        if objects_done_set is not None:
+            reset_qpos = self.init_qpos[:].copy()
+            for element in objects_done_set:
+                reset_qpos[OBS_ELEMENT_INDICES[element]] = OBS_ELEMENT_GOALS[element][:].copy()
+            obs = self.reset_model(reset_qpos=reset_qpos)
+        else:
+            obs = self.reset_model()
+
+        obs = self._get_obs_dict()
         return obs
 
-    def reset_model(self):
-        reset_pos = self.init_qpos[:].copy()
+    def reset_model(self, reset_qpos=None):
+        if reset_qpos is None:
+            # NOTE: if obj penetration happens, ie. arm going thru hinge, this will NOT resolve it
+            # and if sim.step is not called, then obj changes will reset in next call to env.step()
+            reset_qpos = self.init_qpos[:].copy()
         reset_vel = self.init_qvel[:].copy()
-        self.robot.reset(self, reset_pos, reset_vel)
+        self.robot.reset(self, reset_qpos, reset_vel)
 
         reset_mocap_welds(self.sim)
         self.sim.forward()
@@ -277,9 +309,6 @@ class Kitchen_v0(gym.Env):
             reset_mocap_welds(self.solver_sim)
             reset_mocap2body_xpos(self.solver_sim)
             self.solver_sim.forward()
-
-        obs = self._get_obs_dict()
-        return obs
 
     def render(
         self,
@@ -314,48 +343,6 @@ class Kitchen_v0(gym.Env):
         else:
             raise NotImplementedError(mode)
 
-    # from adept_envs.mujoco_env.MujocoEnv
-    def seed(self, seed=None):  # Compatibility with new gym
-        return self._seed(seed)
-
-    def _seed(self, seed=None):
+    def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
-
-
-class DomainRandomizationMujocoWrapper(gym.Env):
-    """
-    Mujoco does not support runtime modification of the environment, it can only load from a
-    static XML. We have to modify the XML and reload it for changes to propogate to the sim.
-
-    see https://github.com/deepmind/dm_control/issues/54
-    https://github.com/deepmind/dm_control/issues/125
-    http://mujoco.org/forum/index.php?threads/programatically-creating-the-bodies.3805/#post-4940
-    """
-
-    def __init__(self):
-        pass
-
-    def change_microwave(self, microwave_id):
-        pass
-
-    def change_kettle(self, kettle_id):
-        pass
-
-    def change_light(self, light_params):
-        # position
-        # intensity
-        # rotation
-        pass
-
-    def change_objects_layout(self):
-        pass
-
-    def change_camera(self):
-        pass
-
-    def change_robot_start_layout(self):
-        pass
-
-    def reload_with_changes(self):
-        pass
