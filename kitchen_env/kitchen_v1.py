@@ -36,6 +36,7 @@ class Kitchen_v1(gym.Env):
         noise_ratio=0.1,
         object_pos_noise_amp=0.1,
         object_vel_noise_qmp=0.1,
+        robot_obs_extra_noise_amp=0.1,
     ):
         self.ctrl_mode = ctrl_mode
         self.frame_skip = frame_skip
@@ -53,6 +54,7 @@ class Kitchen_v1(gym.Env):
         self.noise_ratio = noise_ratio  # global noise multiplier, if < 1 then reduces noise
         self.object_pos_noise_amp = object_pos_noise_amp
         self.object_vel_noise_amp = object_vel_noise_qmp
+        self.robot_obs_extra_noise_amp = robot_obs_extra_noise_amp
 
         self.model_dir = os.path.join(os.path.dirname(__file__), 'assets/')
         self.model_path = os.path.join(self.model_dir, 'kitchen.xml')
@@ -179,7 +181,10 @@ class Kitchen_v1(gym.Env):
     def physics(self):
         return self.sim
 
-    def _get_obs_dict(self, with_noise=True, robot_cache_obs=False):
+    def _get_obs_dict(self, noise_ratio='default', robot_cache_obs=False):
+        if noise_ratio == 'default':
+            noise_ratio = self.noise_ratio
+
         # Gather simulated observation
         robot_qp = self.sim.data.qpos[: self.N_DOF_ROBOT].copy()
         robot_qv = self.sim.data.qvel[: self.N_DOF_ROBOT].copy()
@@ -188,26 +193,26 @@ class Kitchen_v1(gym.Env):
         t = self.sim.data.time
 
         # Simulate observation noise
-        if with_noise:
+        if noise_ratio is not None:
             # currently, robot noise is specified per actuator
             # while object noise is constant across different objects
             robot_qp += (
-                self.noise_ratio
+                noise_ratio
                 * self.robot.pos_noise_amp[: self.N_DOF_ROBOT]
                 * self.np_random.uniform(low=-1.0, high=1.0, size=self.N_DOF_ROBOT)
             )
             robot_qv += (
-                self.noise_ratio
+                noise_ratio
                 * self.robot.vel_noise_amp[: self.N_DOF_ROBOT]
                 * self.np_random.uniform(low=-1.0, high=1.0, size=self.N_DOF_ROBOT)
             )
             obj_qp += (
-                self.noise_ratio
+                noise_ratio
                 * self.object_pos_noise_amp
                 * self.np_random.uniform(low=-1.0, high=1.0, size=self.N_DOF_OBJECT)
             )
             obj_qv += (
-                self.noise_ratio
+                noise_ratio
                 * self.object_vel_noise_amp
                 * self.np_random.uniform(low=-1.0, high=1.0, size=self.N_DOF_OBJECT)
             )
@@ -221,9 +226,24 @@ class Kitchen_v1(gym.Env):
 
         # TODO: add noise
         if self.with_obs_ee:
-            obs_dict['ee_qp'] = get_obs_ee(self.sim, self.rot_use_euler)
+            ee_qp = get_obs_ee(self.sim, self.rot_use_euler)
+            if noise_ratio is not None:
+                ee_qp += (
+                    noise_ratio
+                    * self.robot_obs_extra_noise_amp
+                    * self.np_random.uniform(low=-1.0, high=1.0, size=ee_qp.shape)
+                )
+            obs_dict['ee_qp'] = ee_qp
+
         if self.with_obs_forces:
-            obs_dict['ee_forces'] = get_obs_forces(self.sim)
+            ee_forces = get_obs_forces(self.sim)
+            if noise_ratio is not None:
+                ee_forces += (
+                    noise_ratio
+                    * self.robot_obs_extra_noise_amp
+                    * self.np_random.uniform(low=-1.0, high=1.0, size=ee_forces.shape)
+                )
+            obs_dict['ee_forces'] = ee_forces
 
         if robot_cache_obs:
             self.robot.cache_obs(robot_qp, robot_qv)
@@ -259,7 +279,7 @@ class Kitchen_v1(gym.Env):
         else:
             raise RuntimeError(f"Unsupported ctrl_mode: {self.ctrl_mode}")
 
-        obs = self._get_obs_dict(with_noise=True, robot_cache_obs=True)
+        obs = self._get_obs_dict(robot_cache_obs=True)
         done = False
         reward = 0.0
         env_info = {}
@@ -355,7 +375,7 @@ class Kitchen_v1(gym.Env):
             reset_qpos = None
 
         obs = self.reset_model(reset_qpos=reset_qpos)
-        obs = self._get_obs_dict(with_noise=True, robot_cache_obs=True)
+        obs = self._get_obs_dict(robot_cache_obs=True)
         return obs
 
     def reset_model(self, reset_qpos=None):
