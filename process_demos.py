@@ -64,6 +64,7 @@ parser.add_argument(
 parser.add_argument('--SINGLEOBJ_TIME_EPS', default=15, type=int)
 parser.add_argument('--MAX_ERROR_IGNORE_THRESH', default=0.8, type=float)
 
+parser.add_argument('--LOG', default=1, type=int, help='logging level')
 parser.add_argument('--disable_tqdm', action='store_true')
 args = parser.parse_args()
 args.RENDER_SIZE = tuple(args.RENDER_SIZE)
@@ -160,7 +161,7 @@ def render_demo(env, data, use_physics=False, log=True):
                 mode='rgb_array', height=args.RENDER_SIZE[0], width=args.RENDER_SIZE[1]
             )
             render_buffer.append(curr_frame)
-            if log:
+            if log > 1:
                 print(f'{i_frame}', end=', ', flush=True)
 
         if use_physics:
@@ -194,7 +195,7 @@ def render_demo(env, data, use_physics=False, log=True):
 
         i_frame += 1
 
-    if log:
+    if log > 1:
         print()
         print("physics = %i, time taken = %f" % (use_physics, timer.time() - t0))
 
@@ -214,7 +215,7 @@ def render_demo(env, data, use_physics=False, log=True):
         max_error = np.max(errors)
         med_error = np.median(errors)
 
-        if log:
+        if log > 0:  # Useful for debugging whether the demonstrations are generated consistently
             print(f'over {N} frames, view demo to physics playback error:')
             print(
                 f'tot_error = {tot_error}, min_error = {min_error}, max_error={max_error}, med_error={med_error}'
@@ -256,7 +257,7 @@ def splice_mid_reset(filepath, data, log=True):
     diffs = np.sum(np.diff(data['qpos'][:, :9], axis=0), axis=-1)
     t = np.where(diffs > 0.3)[0]
     if len(t) > 0:
-        if log:
+        if log > 1:
             print(filepath, len(t))
 
         if len(t) != 1:  # should only be one reset t
@@ -282,7 +283,7 @@ def process_demo(
     view_demo=True,  # view demos (physics ignored)
     playback_demo=True,  # playback demos and get data(physics respected)
     split_singleobj=True,
-    log=True,
+    log=1,
 ):
     demo_id, filepath = x
 
@@ -305,7 +306,7 @@ def process_demo(
     task_id, sorted_objects_task = get_task_info(task_objects, objects_done=[])
     task_id = which_set + '_' + task_id
 
-    if log:
+    if log > 1:
         print(filepath, task_id)
 
     os.makedirs(os.path.join(args.OUT_DIR, 'full', task_id), exist_ok=True)
@@ -329,18 +330,30 @@ def process_demo(
             raise e
             return -1
 
+        data['path'] = path
         if args.MAX_ERROR_IGNORE_THRESH is not None:
             errors = path['errors']
             max_error = np.max(errors)
             if max_error > args.MAX_ERROR_IGNORE_THRESH:
                 print(f'ignoring demo {filepath}, max_error = {max_error}')
 
+                os.makedirs(os.path.join(args.OUT_DIR, 'ignored', task_id), exist_ok=True)
+                _outpath = os.path.join(args.OUT_DIR, 'ignored', task_id, f)
+
+                save_video(render_buffer, _outpath + f'_playback{render_meta}')
+
+                if view_demo:
+                    render_buffer = render_demo(env, data, use_physics=False, log=log)
+                    save_video(render_buffer, _outpath + f'_view{render_meta}')
+
+                if save_data:
+                    pickle.dump(data, open(_outpath + '.pkl', 'wb'))
+
                 if args.RECREATE_ENVS:
                     env.close()
 
                 return -1
 
-        data['path'] = path
         save_video(render_buffer, outpath + f'_playback{render_meta}')
 
     if view_demo:
@@ -394,7 +407,7 @@ def process_demo_split_singleobj(
             i += 1
             # raise RuntimeError
         if i != 1:
-            if log:
+            if log > 1:
                 print(f'increased threshold on {o} to {i}x')
         t = np.argmax(traj_obj_success)
 
@@ -466,7 +479,7 @@ def process_demos():
     if args.NUM_WORKERS > 1:
         try:
             pool = multiprocessing.Pool(args.NUM_WORKERS)
-            process_demo_fn = functools.partial(process_demo, log=False)
+            process_demo_fn = functools.partial(process_demo, log=args.LOG)
             results = tqdm(
                 pool.imap(process_demo_fn, enumerate(demos)),
                 total=len(demos),
@@ -484,7 +497,7 @@ def process_demos():
             file=sys.stdout,
             disable=args.disable_tqdm,
         ):
-            process_demo((i, filepath))
+            process_demo((i, filepath), log=args.LOG)
 
     process_time = time.perf_counter() - start
     with open(os.path.join(args.OUT_DIR, 'args.log'), 'w') as f:
