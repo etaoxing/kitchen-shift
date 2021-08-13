@@ -34,6 +34,7 @@ class Kitchen_v1(gym.Env):
         rot_use_euler=False,
         render_size=None,
         noise_ratio=0.1,
+        robot_cache_noise_ratio=None,
         object_pos_noise_amp=0.1,
         object_vel_noise_qmp=0.1,
         robot_obs_extra_noise_amp=0.1,
@@ -52,6 +53,9 @@ class Kitchen_v1(gym.Env):
         self.rot_use_euler = rot_use_euler  # affects format of with_obs_ee
 
         self.noise_ratio = noise_ratio  # global noise multiplier, if < 1 then reduces noise
+        # be careful when using robot_cache_noise_ratio, since this will affect noise
+        # of obs used by the robot controller
+        self.robot_cache_noise_ratio = robot_cache_noise_ratio
         self.object_pos_noise_amp = object_pos_noise_amp
         self.object_vel_noise_amp = object_vel_noise_qmp
         self.robot_obs_extra_noise_amp = robot_obs_extra_noise_amp
@@ -166,8 +170,9 @@ class Kitchen_v1(gym.Env):
     def set_init_qpos(self, qpos):
         self.init_qpos = qpos
 
-    def set_noise_ratio(self, noise_ratio):
+    def set_noise_ratio(self, noise_ratio, robot_cache_noise_ratio=None):
         self.noise_ratio = noise_ratio
+        self.robot_cache_noise_ratio = robot_cache_noise_ratio
 
     @property
     def data(self):
@@ -246,7 +251,24 @@ class Kitchen_v1(gym.Env):
             obs_dict['ee_forces'] = ee_forces
 
         if robot_cache_obs:
-            self.robot.cache_obs(robot_qp, robot_qv)
+            if self.robot_cache_noise_ratio is not None:
+                _robot_qp = self.sim.data.qpos[: self.N_DOF_ROBOT].copy()
+                _robot_qv = self.sim.data.qvel[: self.N_DOF_ROBOT].copy()
+
+                _robot_qp += (
+                    noise_ratio
+                    * self.robot.pos_noise_amp[: self.N_DOF_ROBOT]
+                    * self.np_random2.uniform(low=-1.0, high=1.0, size=self.N_DOF_ROBOT)
+                )
+                _robot_qv += (
+                    noise_ratio
+                    * self.robot.vel_noise_amp[: self.N_DOF_ROBOT]
+                    * self.np_random2.uniform(low=-1.0, high=1.0, size=self.N_DOF_ROBOT)
+                )
+
+                self.robot.cache_obs(_robot_qp, _robot_qv)
+            else:
+                self.robot.cache_obs(robot_qp, robot_qv)
 
         # cast to float32
         for k, v in obs_dict.items():

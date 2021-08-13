@@ -30,6 +30,7 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
         self.defaults = dict(
             camera_id=self.env.camera_id,
             noise_ratio=self.env.noise_ratio,
+            robot_cache_noise_ratio=self.env.robot_cache_noise_ratio,
             init_qpos=self.env.init_qpos,
         )
 
@@ -239,7 +240,9 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
             # print(domain_model_xml)
 
             self.env.set_camera_id(self.changed['camera_id'])
-            self.env.set_noise_ratio(self.changed['noise_ratio'])
+            self.env.set_noise_ratio(
+                self.changed['noise_ratio'], robot_cache_noise_ratio=self.defaults['noise_ratio']
+            )
             self.env.set_init_qpos(self.changed['init_qpos'])
 
             self.env.load_sim(domain_model_xml)
