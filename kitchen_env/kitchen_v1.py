@@ -224,14 +224,14 @@ class Kitchen_v1(gym.Env):
             'obj_qv': obj_qv,
         }
 
-        # TODO: add noise
+        # using np_random2 randomstate for these to preserve past behavior
         if self.with_obs_ee:
             ee_qp = get_obs_ee(self.sim, self.rot_use_euler)
             if noise_ratio is not None:
                 ee_qp += (
                     noise_ratio
                     * self.robot_obs_extra_noise_amp
-                    * self.np_random.uniform(low=-1.0, high=1.0, size=ee_qp.shape)
+                    * self.np_random2.uniform(low=-1.0, high=1.0, size=ee_qp.shape)
                 )
             obs_dict['ee_qp'] = ee_qp
 
@@ -241,7 +241,7 @@ class Kitchen_v1(gym.Env):
                 ee_forces += (
                     noise_ratio
                     * self.robot_obs_extra_noise_amp
-                    * self.np_random.uniform(low=-1.0, high=1.0, size=ee_forces.shape)
+                    * self.np_random2.uniform(low=-1.0, high=1.0, size=ee_forces.shape)
                 )
             obs_dict['ee_forces'] = ee_forces
 
@@ -450,4 +450,5 @@ class Kitchen_v1(gym.Env):
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
+        self.np_random2, _ = seeding.np_random(seed + 1)
         return [seed]
