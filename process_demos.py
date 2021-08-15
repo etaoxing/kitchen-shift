@@ -81,6 +81,9 @@ env_kwargs = dict(
     rot_use_euler=True,
     robot=args.ROBOT,
     #
+    init_random_steps_window=None,
+    rng_type='legacy',
+    #
     # noise_ratio=0.1,
     # object_pos_noise_amp=0.1,
     # object_vel_noise_qmp=0.1,

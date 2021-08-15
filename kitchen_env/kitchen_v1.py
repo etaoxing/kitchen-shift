@@ -17,6 +17,7 @@ from .mujoco.mocap_utils import reset_mocap2body_xpos, reset_mocap_welds
 from .mujoco.rotations import euler2quat, mat2euler, quat2euler, mat2quat, quat_mul
 from .mujoco.obs_utils import get_obs_ee, get_obs_forces
 from .constants import CAMERAS, OBS_ELEMENT_INDICES, OBS_ELEMENT_GOALS, FRANKA_INIT_QPOS
+from .utils import make_rng
 
 
 class Kitchen_v1(gym.Env):
@@ -38,6 +39,8 @@ class Kitchen_v1(gym.Env):
         object_pos_noise_amp=0.1,
         object_vel_noise_qmp=0.1,
         robot_obs_extra_noise_amp=0.1,
+        init_random_steps_window=None,
+        rng_type='legacy',
     ):
         self.ctrl_mode = ctrl_mode
         self.frame_skip = frame_skip
@@ -59,6 +62,9 @@ class Kitchen_v1(gym.Env):
         self.object_pos_noise_amp = object_pos_noise_amp
         self.object_vel_noise_amp = object_vel_noise_qmp
         self.robot_obs_extra_noise_amp = robot_obs_extra_noise_amp
+
+        self.init_random_steps_window = init_random_steps_window
+        self.rng_type = rng_type
 
         self.model_dir = os.path.join(os.path.dirname(__file__), 'assets/')
         self.model_path = os.path.join(self.model_dir, 'kitchen.xml')
@@ -398,6 +404,22 @@ class Kitchen_v1(gym.Env):
 
         obs = self.reset_model(reset_qpos=reset_qpos)
         obs = self._get_obs_dict(robot_cache_obs=True)
+
+        if self.init_random_steps_window is not None:
+            if self.rng_type != 'generator':
+                raise RuntimeError
+
+            if isinstance(self.init_random_steps_window, int):
+                t = self.init_random_steps_window
+            else:
+                t = self.np_random2.integers(
+                    self.init_random_steps_window[0],
+                    self.init_random_steps_window[1],
+                    endpoint=True,
+                )
+            for _ in range(t):
+                self.simulator.step()
+
         return obs
 
     def reset_model(self, reset_qpos=None):
@@ -471,6 +493,18 @@ class Kitchen_v1(gym.Env):
             raise NotImplementedError(mode)
 
     def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        self.np_random2, _ = seeding.np_random(seed + 1)
-        return [seed]
+        if self.rng_type == 'legacy':
+            self.np_random, seed = seeding.np_random(seed)
+            self.np_random2, _ = seeding.np_random(seed + 1)
+            # a separate generator is used to preserve behavior with the original adept_envs,
+            # this is important for consistently generating demonstration trajectories from mocap demos.
+            # also see https://github.com/openai/gym/blob/4ede9280f9c477f1ca09929d10cdc1e1ba1129f1/gym/utils/seeding.py#L24
+            # for more info on random seeding
+            return [seed]
+        elif self.rng_type == 'generator':
+            # Careful, generator API is slightly different from the original random API
+            self.np_random = make_rng(seed)
+            self.np_random2 = make_rng(seed + 1)
+            return [seed]
+        else:
+            raise ValueError
