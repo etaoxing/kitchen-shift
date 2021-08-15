@@ -418,7 +418,7 @@ class Kitchen_v1(gym.Env):
                     endpoint=True,
                 )
             for _ in range(t):
-                self.simulator.step()
+                self.sim.step()
 
         return obs
 
