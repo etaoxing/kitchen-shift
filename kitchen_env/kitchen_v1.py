@@ -495,7 +495,7 @@ class Kitchen_v1(gym.Env):
     def seed(self, seed=None):
         if self.rng_type == 'legacy':
             self.np_random, seed = seeding.np_random(seed)
-            self.np_random2, _ = seeding.np_random(seed + 1)
+            self.np_random2, _ = seeding.np_random(seed + 1 if seed is not None else seed)
             # a separate generator is used to preserve behavior with the original adept_envs,
             # this is important for consistently generating demonstration trajectories from mocap demos.
             # also see https://github.com/openai/gym/blob/4ede9280f9c477f1ca09929d10cdc1e1ba1129f1/gym/utils/seeding.py#L24
@@ -504,7 +504,7 @@ class Kitchen_v1(gym.Env):
         elif self.rng_type == 'generator':
             # Careful, generator API is slightly different from the original random API
             self.np_random = make_rng(seed)
-            self.np_random2 = make_rng(seed + 1)
+            self.np_random2 = make_rng(seed + 1 if seed is not None else seed)
             return [seed]
         else:
             raise ValueError
