@@ -56,6 +56,17 @@ domain_params = dict(
         ]
     ),
     change_noise=([[('change_noise_ratio', i)] for i in [0.0, 1.0, 10.0]]),
+    change_robot_init=(
+        [
+            [('change_robot_init_qpos', i)]
+            for i in [
+                [-0.4, -1.73, 1.76, -1.85, 0.15, 0.7, 1.7, 0.04, 0.04],
+                [-1.18, -1.76, 1.43, -1.57, -0.1, 0.88, 2.55, 0.0, -0.0],
+                [-1.62, -1.76, 0.6, -1.71, 0.36, 0.36, 1.7, 0.0, -0.0],
+                [-1.15, -1.76, 1.52, -2.25, 1.9, 1.42, 0.04, 0.0, -0.0],
+            ]
+        ]
+    ),
     change_one_object_done=(
         [
             [('change_object_done', i)]

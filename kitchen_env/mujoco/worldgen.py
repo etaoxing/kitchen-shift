@@ -193,8 +193,8 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
     def change_noise_ratio(self, noise_ratio):
         self.changed['noise_ratio'] = noise_ratio
 
-    def change_robot_start_layout(self, layout):
-        pass
+    def change_robot_init_qpos(self, init_qpos):
+        self.changed['init_qpos'][: self.env.N_DOF_ROBOT] = np.array(init_qpos)
 
     def change_robot(self):
         pass
