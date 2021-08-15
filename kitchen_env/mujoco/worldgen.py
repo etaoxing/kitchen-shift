@@ -32,6 +32,11 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
             noise_ratio=self.env.noise_ratio,
             robot_cache_noise_ratio=self.env.robot_cache_noise_ratio,
             init_qpos=self.env.init_qpos,
+            #
+            init_random_steps_window=self.init_random_steps_window,
+            init_perturb_robot_ratio=self.init_perturb_robot_ratio,
+            init_perturb_object_ratio=self.init_perturb_object_ratio,
+            rng_type=self.rng_type,
         )
 
         self.parser = ET.XMLParser(remove_blank_text=True, remove_comments=True)
@@ -193,6 +198,18 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
     def change_noise_ratio(self, noise_ratio):
         self.changed['noise_ratio'] = noise_ratio
 
+    def change_init_noise_params(
+        self,
+        init_random_steps_window,
+        init_perturb_robot_ratio,
+        init_perturb_object_ratio,
+        rng_type,
+    ):
+        self.init_random_steps_window = init_random_steps_window
+        self.init_perturb_robot_ratio = init_perturb_robot_ratio
+        self.init_perturb_object_ratio = init_perturb_object_ratio
+        self.rng_type = rng_type
+
     def change_robot_init_qpos(self, init_qpos):
         self.changed['init_qpos'][: self.env.N_DOF_ROBOT] = np.array(init_qpos)
 
@@ -244,6 +261,12 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
                 self.changed['noise_ratio'], robot_cache_noise_ratio=self.defaults['noise_ratio']
             )
             self.env.set_init_qpos(self.changed['init_qpos'])
+            self.env.set_init_noise_params(
+                self.changed['init_random_steps_window'],
+                self.changed['init_perturb_robot_ratio'],
+                self.changed['init_perturb_object_ratio'],
+                self.changed['rng_type'],
+            )
 
             self.env.load_sim(domain_model_xml)
 

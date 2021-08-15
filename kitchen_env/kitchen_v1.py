@@ -40,6 +40,8 @@ class Kitchen_v1(gym.Env):
         object_vel_noise_qmp=0.1,
         robot_obs_extra_noise_amp=0.1,
         init_random_steps_window=None,
+        init_perturb_robot_ratio=None,
+        init_perturb_object_ratio=None,
         rng_type='legacy',
     ):
         self.ctrl_mode = ctrl_mode
@@ -64,6 +66,8 @@ class Kitchen_v1(gym.Env):
         self.robot_obs_extra_noise_amp = robot_obs_extra_noise_amp
 
         self.init_random_steps_window = init_random_steps_window
+        self.init_perturb_robot_ratio = init_perturb_robot_ratio
+        self.init_perturb_object_ratio = init_perturb_object_ratio
         self.rng_type = rng_type
 
         self.model_dir = os.path.join(os.path.dirname(__file__), 'assets/')
@@ -179,6 +183,21 @@ class Kitchen_v1(gym.Env):
     def set_noise_ratio(self, noise_ratio, robot_cache_noise_ratio=None):
         self.noise_ratio = noise_ratio
         self.robot_cache_noise_ratio = robot_cache_noise_ratio
+
+    def set_init_noise_params(
+        self,
+        init_random_steps_window,
+        init_perturb_robot_ratio,
+        init_perturb_object_ratio,
+        rng_type,
+    ):
+        self.init_random_steps_window = init_random_steps_window
+        self.init_perturb_robot_ratio = init_perturb_robot_ratio
+        self.init_perturb_object_ratio = init_perturb_object_ratio
+
+        if rng_type != self.rng_type:
+            self.rng_type = rng_type
+            self.seed(seed=self._base_seed)
 
     @property
     def data(self):
@@ -427,9 +446,23 @@ class Kitchen_v1(gym.Env):
             # NOTE: if obj penetration happens, ie. arm going thru hinge, this will NOT resolve it
             # and if sim.step is not called, then obj changes will reset in next call to env.step()
             reset_qpos = self.init_qpos[:].copy()
+        else:
+            reset_qpos = reset_qpos[:].copy()
         reset_qvel = self.init_qvel[:].copy()
 
-        # moved function contents to here
+        if self.init_perturb_robot_ratio is not None:
+            init_robot_noise = self.init_perturb_robot_ratio * self.np_random2.uniform(
+                low=self.robot.robot_pos_bound[: self.N_DOF_ROBOT, 0],
+                high=self.robot.robot_pos_bound[: self.N_DOF_ROBOT, 1],
+            )
+            reset_qpos[: self.N_DOF_ROBOT] += init_robot_noise
+        if self.init_perturb_object_ratio is not None:
+            reset_qpos[-self.N_DOF_OBJECT :] += self.np_random2.uniform(
+                low=-self.init_perturb_object_ratio, high=self.init_perturb_object_ratio
+            )
+        # Not adding perturbation to reset_qvel to ensure objects will be static
+
+        # moved robot.reset() function contents to here
         # self.robot.reset(self, reset_qpos, reset_qvel)
         reset_qpos[: self.N_DOF_ROBOT] = self.robot.enforce_position_limits(
             reset_qpos[: self.N_DOF_ROBOT]
@@ -493,6 +526,8 @@ class Kitchen_v1(gym.Env):
             raise NotImplementedError(mode)
 
     def seed(self, seed=None):
+        self._base_seed = seed
+
         if self.rng_type == 'legacy':
             self.np_random, seed = seeding.np_random(seed)
             self.np_random2, _ = seeding.np_random(seed + 1 if seed is not None else seed)
