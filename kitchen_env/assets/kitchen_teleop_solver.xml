@@ -16,13 +16,16 @@
     <include file="objects/microwave_asset.xml"/>
     <include file="objects/kettle_asset.xml"/>
 
-    <!-- <visual>
-    <global offwidth="2560" offheight="1920" />
-    <quality shadowsize="4096" offsamples="8" />
-    <map force="0.1" fogend="5" />
-    </visual> -->
+    <!-- change this if you want to render at higher resolutions -->
+    <visual>
+        <!-- <global offwidth="2560" offheight="1920" /> -->
+        <!-- <quality shadowsize="4096" offsamples="8" /> -->
 
-    <compiler inertiafromgeom='auto' inertiagrouprange='3 5' angle="radian"/>
+        <global offwidth="640" offheight="480" />
+        <quality shadowsize="1024" offsamples="4" />
+
+        <!-- <map force="0.1" fogend="5" /> -->
+    </visual>
 
     <equality>
         <!-- original constraints -->
@@ -38,6 +41,9 @@
         <!-- from Abhishek's code -->
         <!-- <weld body1="vive_controller" body2="panda0_link7" solref="0.02 1" solimp=".4 .85 .1"/> -->
     </equality>
+
+    <compiler inertiafromgeom='auto' inertiagrouprange='3 5' angle="radian"/>
+
 
     <!-- xarm -->
     <!-- <equality>
@@ -55,6 +61,7 @@
         <body pos='0. 0 1.8' euler='0 0 1.57'>
             <!-- <geom type='cylinder' size='.120 .90' pos='-.04 0 -0.90' class='panda_viz'/> -->
             <include file="franka/franka_panda.xml"/>
+            <!-- <include file="franka2/franka_panda.xml"/> -->
         </body>
 
         <body name='desk' pos='-0.1 0.75 0'>
@@ -88,8 +95,8 @@
 
     </worldbody>
 
-    <keyframe>
+    <!-- <keyframe>
         <key qpos='0.16 -1.76 1.84 -2.51 0.36 0.79 1.55 0.00 0.0 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 1.25561e-05 1.57437e-07 8.24417e-05 9.48283e-05 0 0 0 0 -0.269 0.35 1.61523 1 1.34939e-19 -3.51612e-05 -7.50168e-19'/>
-    </keyframe>
+    </keyframe> -->
 
 </mujoco>

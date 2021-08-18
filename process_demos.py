@@ -204,6 +204,17 @@ def render_demo(env, data, use_physics=False, log=True):
                 ctrl = data['ctrl'][i_frame]
                 act = (ctrl - env.act_mid) / env.act_amp
                 act = np.clip(act, -0.999, 0.999)
+            elif env.ctrl_mode == 'absmocapik':
+                gripper_a = data['ctrl'][i_frame][7:9]
+                ctrl = np.concatenate(
+                    [
+                        data['mocap_pos'][i_frame],
+                        data['mocap_quat'][i_frame],
+                        gripper_a,
+                    ]
+                )
+                act = (ctrl - env.act_mid) / env.act_amp
+                act = np.clip(act, -0.999, 0.999)
             else:
                 raise RuntimeError
 

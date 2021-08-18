@@ -131,7 +131,7 @@ class Kitchen_v1(gym.Env):
 
             self.act_mid = np.zeros(action_dim)
             self.act_amp = 3.0 * np.ones(action_dim)
-        elif self.ctrl_mode == 'mocapik':
+        elif self.ctrl_mode == 'relmocapik':
             # with mocapik, we follow robogym and robosuite by spawning a separate simulator
             self.mocapid = None  # set later since sim is not yet initialized
             self.initial_mocap_quat = np.array([-0.65269804, 0.65364932, 0.27044485, 0.27127002])
@@ -148,6 +148,14 @@ class Kitchen_v1(gym.Env):
             self.rot_range = 0.075
             self._create_solver_sim()
             # TODO: if using worldgen, then need to propogate changes to solver_sim
+        elif self.ctrl_mode == 'absmocapik':
+            self.mocapid = None  # set later since sim is not yet initialized
+            self._create_solver_sim()
+
+            action_dim = self.N_DOF_ROBOT  # xyz (3) + quat (4) + gripper (2) == 9
+
+            self.act_mid = np.zeros(action_dim)
+            self.act_amp = 3.0 * np.ones(action_dim)
         else:
             raise ValueError
 
@@ -321,8 +329,8 @@ class Kitchen_v1(gym.Env):
             self._step_absvel(action)
         elif self.ctrl_mode == 'abspos':
             self._step_abspos(action)
-        elif self.ctrl_mode == 'mocapik':
-            self._step_mocapik(action)
+        elif self.ctrl_mode == 'absmocapik':
+            self._step_absmocapik(action)
         else:
             raise RuntimeError(f"Unsupported ctrl_mode: {self.ctrl_mode}")
 
@@ -351,9 +359,7 @@ class Kitchen_v1(gym.Env):
 
         self.robot.step(self, a, self.frame_skip, mode='posact')
 
-    def _step_mocapik(self, a):
-        a = np.clip(a, -1.0, 1.0)
-
+    def _reset_solver_sim(self):
         self.solver_sim.data.qpos[:] = self.sim.data.qpos[:].copy()
         self.solver_sim.data.qvel[:] = self.sim.data.qvel[:].copy()
 
@@ -369,6 +375,48 @@ class Kitchen_v1(gym.Env):
             self.mocapid = self.solver_sim.model.body_mocapid[
                 self.solver_sim.model.body_name2id('vive_controller')
             ]
+
+    def _apply_solver_sim(self):
+        step_duration = self.frame_skip * self.model.opt.timestep
+        n_frames = int(step_duration / self.solver_sim.model.opt.timestep)
+
+        with self.solver_sim.model.disable('gravity'):
+            for _ in range(n_frames):
+                self.solver_sim.step()
+
+        # self.solver_sim_renderer.render_to_window()
+
+        ja = self.solver_sim.data.qpos[: self.N_DOF_ROBOT].copy()
+        return ja
+
+    def _step_absmocapik(self, a):
+        a = np.clip(a, -1.0, 1.0)
+        a = self.act_mid + a * self.act_amp  # mean center and scale
+
+        self._reset_solver_sim()
+
+        pos_a = a[0:3]
+        quat_a = a[3:7]
+        gripper_a = a[7:9]
+
+        self.solver_sim.data.mocap_pos[self.mocapid, ...] = pos_a.copy()
+        self.solver_sim.data.mocap_quat[self.mocapid, ...] = quat_a.copy()
+        self.solver_sim.data.ctrl[:2] = gripper_a.copy()
+
+        # mocap do_simulation w/ solver_sim
+        # get robot qpos from solver_sim and swap in gripper_a
+        ja = self._apply_solver_sim()
+        ja[7:9] = gripper_a
+
+        if self.compensate_gravity:
+            self.sim.data.qfrc_applied[:9] = self.sim.data.qfrc_bias[:9]
+
+        self.robot.step(self, ja, self.frame_skip, mode='posact')
+
+    def _step_relmocapik(self, a):
+        a = np.clip(a, -1.0, 1.0)
+
+        self._reset_solver_sim()
 
         # split action [3-dim Cartesian coordinate, 3-dim euler angle OR 4-dim quarternion, 2-dim gripper joints]
         current_pos = self.solver_sim.data.mocap_pos[self.mocapid, ...].copy()
@@ -390,19 +438,11 @@ class Kitchen_v1(gym.Env):
             new_quat = euler2quat(quat2euler(current_quat) + rot_a)
             self.solver_sim.data.mocap_quat[self.mocapid, ...] = new_quat.copy()
 
-        # mocap do_simulation w/ solver_sim
         self.solver_sim.data.ctrl[:2] = gripper_a.copy()
-        step_duration = self.frame_skip * self.model.opt.timestep
-        n_frames = int(step_duration / self.solver_sim.model.opt.timestep)
 
-        with self.solver_sim.model.disable('gravity'):
-            for _ in range(n_frames):
-                self.solver_sim.step()
-
-        # self.solver_sim_renderer.render_to_window()
-
+        # mocap do_simulation w/ solver_sim
         # get robot qpos from solver_sim and swap in gripper_a
-        ja = self.solver_sim.data.qpos[: self.N_DOF_ROBOT].copy()
+        ja = self._apply_solver_sim()
         ja[7:9] = gripper_a
 
         if self.compensate_gravity:
