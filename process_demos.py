@@ -61,6 +61,7 @@ parser.add_argument(
     # lowered threshold compared to 0.3 (guarantees kettle in place when splitting singleobj)
     type=float,
 )
+parser.add_argument('--RNG_TYPE', default='generator', type=str, choices=['generator', 'legacy'])
 parser.add_argument('--SINGLEOBJ_TIME_EPS', default=15, type=int)
 parser.add_argument('--MAX_ERROR_IGNORE_THRESH', default=0.8, type=float)
 
@@ -81,13 +82,30 @@ env_kwargs = dict(
     rot_use_euler=True,
     robot=args.ROBOT,
     #
-    init_random_steps_window=None,
-    rng_type='legacy',
     #
     # noise_ratio=0.1,
     # object_pos_noise_amp=0.1,
     # object_vel_noise_qmp=0.1,
 )
+if args.RNG_TYPE == 'generator':
+    env_kwargs.update(
+        dict(
+            init_random_steps_window=(0, 3),
+            init_perturb_robot_ratio=0.03,
+            init_perturb_object_ratio=0.03,
+            rng_type='generator',
+        )
+    )
+elif args.RNG_TYPE == 'legacy':
+    env_kwargs.update(
+        dict(
+            init_random_steps_window=None,
+            rng_type='legacy',
+        )
+    )
+else:
+    raise ValueError
+
 # TODO: we spawn a separate env if want to convert demos to a different action space
 
 create_env_fn = functools.partial(
