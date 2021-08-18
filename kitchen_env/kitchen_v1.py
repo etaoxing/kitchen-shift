@@ -359,9 +359,9 @@ class Kitchen_v1(gym.Env):
 
         self.robot.step(self, a, self.frame_skip, mode='posact')
 
-    def _reset_solver_sim(self):
-        self.solver_sim.data.qpos[:] = self.sim.data.qpos[:].copy()
-        self.solver_sim.data.qvel[:] = self.sim.data.qvel[:].copy()
+    def _reset_solver_sim(self, qpos, qvel):
+        self.solver_sim.data.qpos[:] = qpos[:].copy()
+        self.solver_sim.data.qvel[:] = qvel[:].copy()
 
         # # track object state only
         # self.solver_sim.data.qpos[-self.N_DOF_OBJECT:] = self.sim.data.qpos[-self.N_DOF_OBJECT:].copy()
@@ -393,7 +393,7 @@ class Kitchen_v1(gym.Env):
         a = np.clip(a, -1.0, 1.0)
         a = self.act_mid + a * self.act_amp  # mean center and scale
 
-        self._reset_solver_sim()
+        self._reset_solver_sim(self.sim.data.qpos, self.sim.data.qvel)
 
         pos_a = a[0:3]
         quat_a = a[3:7]
@@ -416,7 +416,7 @@ class Kitchen_v1(gym.Env):
     def _step_relmocapik(self, a):
         a = np.clip(a, -1.0, 1.0)
 
-        self._reset_solver_sim()
+        self._reset_solver_sim(self.sim.data.qpos, self.sim.data.qvel)
 
         # split action [3-dim Cartesian coordinate, 3-dim euler angle OR 4-dim quarternion, 2-dim gripper joints]
         current_pos = self.solver_sim.data.mocap_pos[self.mocapid, ...].copy()

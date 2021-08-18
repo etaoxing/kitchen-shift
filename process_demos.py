@@ -205,14 +205,34 @@ def render_demo(env, data, use_physics=False, log=True):
                 act = (ctrl - env.act_mid) / env.act_amp
                 act = np.clip(act, -0.999, 0.999)
             elif env.ctrl_mode == 'absmocapik':
-                gripper_a = data['ctrl'][i_frame][7:9]
-                ctrl = np.concatenate(
+                # gripper_a = data['ctrl'][i_frame][7:9]
+                # ctrl = np.concatenate(
+                #     [data['mocap_pos'][i_frame], data['mocap_quat'][i_frame], gripper_a]
+                # )
+                # act = (ctrl - env.act_mid) / env.act_amp
+                # act = np.clip(act, -0.999, 0.999)
+
+                # cannot directly apply mocap data recorded in demonstrations
+                # instead, set the solver_sim state using the recorded state
+                # and grab obs_ee to step the actual simulator
+
+                from kitchen_env.mujoco.obs_utils import get_obs_ee
+
+                # could also just only use data['qpos'], but for consistency grab data['ctrl']
+                _qpos = np.concatenate(
+                    [data['ctrl'][i_frame], data['qpos'][i_frame][-env.N_DOF_OBJECT :]]
+                )
+                env._reset_solver_sim(_qpos, data['qvel'][i_frame])
+                # obs_ee = get_obs_ee(env.solver_sim)
+                obs_ee = np.concatenate(
                     [
-                        data['mocap_pos'][i_frame],
-                        data['mocap_quat'][i_frame],
-                        gripper_a,
+                        env.solver_sim.data.mocap_pos[env.mocapid, ...],
+                        env.solver_sim.data.mocap_quat[env.mocapid, ...],
                     ]
                 )
+
+                gripper_a = data['ctrl'][i_frame][7:9]
+                ctrl = np.concatenate([obs_ee, gripper_a])
                 act = (ctrl - env.act_mid) / env.act_amp
                 act = np.clip(act, -0.999, 0.999)
             else:
