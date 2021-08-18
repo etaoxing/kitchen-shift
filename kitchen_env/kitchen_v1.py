@@ -331,6 +331,8 @@ class Kitchen_v1(gym.Env):
             self._step_abspos(action)
         elif self.ctrl_mode == 'absmocapik':
             self._step_absmocapik(action)
+        elif self.ctrl_mode == 'relmocapik':
+            self._step_relmocapik(action)
         else:
             raise RuntimeError(f"Unsupported ctrl_mode: {self.ctrl_mode}")
 

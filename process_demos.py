@@ -151,6 +151,11 @@ def render_demo(env, data, use_physics=False, log=True):
         env.sim.data.qvel[:] = init_qvel
         env.sim.forward()
 
+        if env.ctrl_mode == 'relmocapik':
+            env._reset_solver_sim(init_qpos, init_qvel)
+            mocap_pos = env.solver_sim.data.mocap_pos[env.mocapid, ...].copy()
+            mocap_quat = env.solver_sim.data.mocap_quat[env.mocapid, ...].copy()
+
     render_buffer = []
     path = dict(observations=[], actions=[])
     N = data['ctrl'].shape[0]
@@ -200,11 +205,15 @@ def render_demo(env, data, use_physics=False, log=True):
                 )
                 act = (ctrl - env.act_mid) / env.act_amp
                 act = np.clip(act, -0.999, 0.999)
+
             elif env.ctrl_mode == 'abspos':
                 ctrl = data['ctrl'][i_frame]
                 act = (ctrl - env.act_mid) / env.act_amp
                 act = np.clip(act, -0.999, 0.999)
+
             elif env.ctrl_mode == 'absmocapik':
+                raise NotImplementedError  # doesn't work
+
                 # gripper_a = data['ctrl'][i_frame][7:9]
                 # ctrl = np.concatenate(
                 #     [data['mocap_pos'][i_frame], data['mocap_quat'][i_frame], gripper_a]
@@ -235,6 +244,42 @@ def render_demo(env, data, use_physics=False, log=True):
                 ctrl = np.concatenate([obs_ee, gripper_a])
                 act = (ctrl - env.act_mid) / env.act_amp
                 act = np.clip(act, -0.999, 0.999)
+
+            elif env.ctrl_mode == 'relmocapik':
+                # set the state of the solver env
+                # compute the rel difference b/w current qpos and previous qpos, mocap
+                # scale that and pass as input to sim
+
+                # could also just only use data['qpos'], but for consistency grab data['ctrl']
+                _qpos = np.concatenate(
+                    [data['ctrl'][i_frame], data['qpos'][i_frame][-env.N_DOF_OBJECT :]]
+                )
+                env._reset_solver_sim(_qpos, data['qvel'][i_frame])
+
+                new_mocap_pos = env.solver_sim.data.mocap_pos[env.mocapid, ...].copy()
+                new_mocap_quat = env.solver_sim.data.mocap_quat[env.mocapid, ...].copy()
+
+                from kitchen_env.mujoco.rotations import euler2quat, quat2euler
+
+                pos_a = new_mocap_pos - mocap_pos
+                rot_a = quat2euler(new_mocap_quat) - quat2euler(mocap_quat)
+
+                if not env.rot_use_euler:
+                    rot_a = euler2quat(rot_a)
+
+                pos_a /= env.pos_range
+                rot_a /= env.rot_range
+
+                if env.binary_gripper:
+                    raise NotImplementedError
+                else:
+                    gripper_a = data['ctrl'][i_frame][7:9]
+
+                act = np.concatenate([pos_a, rot_a, gripper_a])
+
+                mocap_pos = new_mocap_pos
+                mocap_quat = new_mocap_quat
+
             else:
                 raise RuntimeError
 
