@@ -63,6 +63,7 @@ parser.add_argument(
 parser.add_argument('--RNG_TYPE', default='generator', type=str, choices=['generator', 'legacy'])
 parser.add_argument('--SINGLEOBJ_TIME_EPS', default=15, type=int)
 parser.add_argument('--MAX_ERROR_IGNORE_THRESH', default=0.8, type=float)
+parser.add_argument('--CHECK_SUCCESS', default=False, type=bool)
 
 parser.add_argument('--LOG', default=1, type=int, help='logging level')
 parser.add_argument('--disable_tqdm', action='store_true')
@@ -134,7 +135,7 @@ def save_video(render_buffer, filepath):
     vw.release()
 
 
-def render_demo(env, data, use_physics=False, log=True):
+def render_demo(env, data, use_physics=False, log=True, task_objects=None):
     # render_skip = max(1, round(1.0 / (args.FPS * env.sim.model.opt.timestep * env.frame_skip)))
     t0 = time.perf_counter()
 
@@ -334,6 +335,26 @@ def render_demo(env, data, use_physics=False, log=True):
                 f'tot_error = {tot_error}, min_error = {min_error}, max_error={max_error}, med_error={med_error}'
             )
 
+        if task_objects is not None and args.CHECK_SUCCESS:
+            # check task success of final state
+            final_o = path['observations'][-1]
+            obj_qp = final_o['obj_qp']
+
+            obj_completed = []
+            for obj in task_objects:
+                obj_indices = OBS_ELEMENT_INDICES[obj]
+                ag = obj_qp[obj_indices - env.N_DOF_ROBOT]
+                dg = OBS_ELEMENT_GOALS[obj]
+
+                d = np.linalg.norm(ag - dg)
+                if d < args.BONUS_THRESH:
+                    obj_completed.append(obj)
+
+            if log > 1:
+                print(f'subgoals completed = {len(obj_completed), obj_completed}')
+
+            path['subgoals_completed'] = len(obj_completed)
+
         # path['observations'] = np.vstack(path['observations'])
         path['actions'] = np.vstack(path['actions'])
         return render_buffer, path
@@ -437,7 +458,9 @@ def process_demo(
 
     if playback_demo:
         try:
-            render_buffer, path = render_demo(env, data, use_physics=True, log=log)
+            render_buffer, path = render_demo(
+                env, data, use_physics=True, log=log, task_objects=task_objects
+            )
         except Exception as e:
             print(f'skipped playback {filepath}, {e}')
             raise e
@@ -447,7 +470,12 @@ def process_demo(
         if args.MAX_ERROR_IGNORE_THRESH is not None:
             errors = path['errors']
             max_error = np.max(errors)
-            if max_error > args.MAX_ERROR_IGNORE_THRESH:
+
+            fail = max_error > args.MAX_ERROR_IGNORE_THRESH
+            if args.CHECK_SUCCESS:
+                fail = fail or path['subgoals_completed'] != len(task_objects)
+
+            if fail:
                 print(f'ignoring demo {filepath}, max_error = {max_error}')
 
                 os.makedirs(os.path.join(args.OUT_DIR, 'ignored', task_id), exist_ok=True)
