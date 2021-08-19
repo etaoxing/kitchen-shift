@@ -144,7 +144,7 @@ class Kitchen_v1(gym.Env):
             gripper_action_dim = 1 if self.binary_gripper else 2
             action_dim = pos_action_dim + rot_action_dim + gripper_action_dim
 
-            self.pos_range = 0.075  # allow larger change
+            self.pos_range = 0.075
             self.rot_range = 0.075
             self._create_solver_sim()
             # TODO: if using worldgen, then need to propogate changes to solver_sim
@@ -167,6 +167,8 @@ class Kitchen_v1(gym.Env):
         }
         self.observation_space = spaces.Dict(obs_space)
 
+        self.create_renderer()
+
     def load_sim(self, xml_string):
         with tempfile.NamedTemporaryFile(mode='w+', dir=self.model_dir) as f:
             f.write(xml_string)
@@ -181,9 +183,13 @@ class Kitchen_v1(gym.Env):
 
     def set_camera_id(self, camera_id):
         self.camera_id = camera_id
+
+    def create_renderer(self):
         self.renderer = DMRenderer(self.sim, camera_settings=CAMERAS[self.camera_id])
-        # self.solver_sim_renderer = DMRenderer(
-        #                 self.solver_sim, camera_settings=CAMERAS[self.camera_id])
+        if hasattr(self, 'solver_sim'):
+            self.solver_sim_renderer = DMRenderer(
+                self.solver_sim, camera_settings=CAMERAS[self.camera_id]
+            )
 
     def set_init_qpos(self, qpos):
         self.init_qpos = qpos
@@ -527,7 +533,7 @@ class Kitchen_v1(gym.Env):
         for _ in range(10):
             self.sim.step()
 
-        if self.ctrl_mode == 'mocapik':
+        if self.ctrl_mode == 'absmocapik' or self.ctrl_mode == 'relmocapik':
             self.solver_sim.data.qpos[:] = self.sim.data.qpos[:].copy()
             self.solver_sim.data.qvel[:] = self.sim.data.qvel[:].copy()
             reset_mocap_welds(self.solver_sim)

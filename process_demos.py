@@ -3,7 +3,6 @@ import argparse
 import pickle
 import functools
 import random
-import time as timer
 from glob import glob
 import multiprocessing
 import cv2
@@ -137,7 +136,7 @@ def save_video(render_buffer, filepath):
 
 def render_demo(env, data, use_physics=False, log=True):
     # render_skip = max(1, round(1.0 / (args.FPS * env.sim.model.opt.timestep * env.frame_skip)))
-    t0 = timer.time()
+    t0 = time.perf_counter()
 
     init_qpos = data['qpos'][0].copy()
     init_qvel = data['qvel'][0].copy()
@@ -190,6 +189,8 @@ def render_demo(env, data, use_physics=False, log=True):
             if log > 1:
                 print(f'{i_frame}', end=', ', flush=True)
 
+            # env.render()
+
         if use_physics:
             path['observations'].append(obs)
             if i_frame == N:  # for adding final observation
@@ -212,8 +213,6 @@ def render_demo(env, data, use_physics=False, log=True):
                 act = np.clip(act, -0.999, 0.999)
 
             elif env.ctrl_mode == 'absmocapik':
-                raise NotImplementedError  # doesn't work
-
                 # gripper_a = data['ctrl'][i_frame][7:9]
                 # ctrl = np.concatenate(
                 #     [data['mocap_pos'][i_frame], data['mocap_quat'][i_frame], gripper_a]
@@ -221,8 +220,7 @@ def render_demo(env, data, use_physics=False, log=True):
                 # act = (ctrl - env.act_mid) / env.act_amp
                 # act = np.clip(act, -0.999, 0.999)
 
-                # cannot directly apply mocap data recorded in demonstrations
-                # instead, set the solver_sim state using the recorded state
+                # set the solver_sim state using the recorded state
                 # and grab obs_ee to step the actual simulator
 
                 from kitchen_env.mujoco.obs_utils import get_obs_ee
@@ -232,6 +230,10 @@ def render_demo(env, data, use_physics=False, log=True):
                     [data['ctrl'][i_frame], data['qpos'][i_frame][-env.N_DOF_OBJECT :]]
                 )
                 env._reset_solver_sim(_qpos, data['qvel'][i_frame])
+
+                # env.solver_sim_renderer.render_to_window()
+                # time.sleep(1)
+
                 # obs_ee = get_obs_ee(env.solver_sim)
                 obs_ee = np.concatenate(
                     [
@@ -246,6 +248,8 @@ def render_demo(env, data, use_physics=False, log=True):
                 act = np.clip(act, -0.999, 0.999)
 
             elif env.ctrl_mode == 'relmocapik':
+                raise NotImplementedError  # doesn't work
+
                 # set the state of the solver env
                 # compute the rel difference b/w current qpos and previous qpos, mocap
                 # scale that and pass as input to sim
@@ -256,24 +260,32 @@ def render_demo(env, data, use_physics=False, log=True):
                 )
                 env._reset_solver_sim(_qpos, data['qvel'][i_frame])
 
+                env.solver_sim_renderer.render_to_window()
+                # time.sleep(1)
+
                 new_mocap_pos = env.solver_sim.data.mocap_pos[env.mocapid, ...].copy()
                 new_mocap_quat = env.solver_sim.data.mocap_quat[env.mocapid, ...].copy()
 
-                from kitchen_env.mujoco.rotations import euler2quat, quat2euler
+                if env.binary_gripper:
+                    raise NotImplementedError
+                else:
+                    gripper_a = data['ctrl'][i_frame][7:9]
+
+                env.solver_sim.data.ctrl[:2] = gripper_a.copy()
+
+                ja = env._apply_solver_sim()
+                # print(np.linalg.norm(ja - data['qpos'][i_frame][:9]))
+
+                from kitchen_env.mujoco.rotations import euler2quat, quat2euler, subtract_euler
 
                 pos_a = new_mocap_pos - mocap_pos
-                rot_a = quat2euler(new_mocap_quat) - quat2euler(mocap_quat)
+                rot_a = subtract_euler(quat2euler(new_mocap_quat), quat2euler(mocap_quat))
 
                 if not env.rot_use_euler:
                     rot_a = euler2quat(rot_a)
 
                 pos_a /= env.pos_range
                 rot_a /= env.rot_range
-
-                if env.binary_gripper:
-                    raise NotImplementedError
-                else:
-                    gripper_a = data['ctrl'][i_frame][7:9]
 
                 act = np.concatenate([pos_a, rot_a, gripper_a])
 
@@ -288,13 +300,17 @@ def render_demo(env, data, use_physics=False, log=True):
 
             next_obs, reward, done, env_info = env.step(act)
 
+            if env.ctrl_mode == 'relmocapik':  # grab again to combat drift
+                mocap_pos = env.solver_sim.data.mocap_pos[env.mocapid, ...].copy()
+                mocap_quat = env.solver_sim.data.mocap_quat[env.mocapid, ...].copy()
+
             path['actions'].append(act)
 
         i_frame += 1
 
     if log > 1:
         print()
-        print("physics = %i, time taken = %f" % (use_physics, timer.time() - t0))
+        print("physics = %i, time taken = %f" % (use_physics, time.perf_counter() - t0))
 
     if use_physics:
         # check the difference b/w the demo path and the playback path and make sure its valid
