@@ -4,7 +4,6 @@ import itertools
 
 import kitchen_env
 import gym
-from kitchen_env import MujocoWorldgenKitchenEnvWrapper
 
 
 domain_params = dict(
@@ -90,7 +89,7 @@ env = gym.make(
     camera_id=6,
     render_size=rs,
 )
-env = MujocoWorldgenKitchenEnvWrapper(env)
+env = kitchen_env.MujocoWorldgenKitchenEnvWrapper(env)
 
 os.makedirs('worldgen', exist_ok=True)
 
