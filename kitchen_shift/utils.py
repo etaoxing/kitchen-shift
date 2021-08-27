@@ -1,4 +1,4 @@
-from kitchen_env.constants import DEMO_OBJ_ORDER
+from kitchen_shift.constants import DEMO_OBJ_ORDER
 
 
 def get_task_info(objects_task, objects_done=[]):

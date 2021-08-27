@@ -11,8 +11,8 @@ import gym
 from tqdm import tqdm
 import time
 
-import kitchen_env
-from kitchen_env.adept_envs.utils.parse_mjl import parse_mjl_logs, viz_parsed_mjl_logs
+import kitchen_shift
+from kitchen_shift.adept_envs.utils.parse_mjl import parse_mjl_logs, viz_parsed_mjl_logs
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -116,13 +116,13 @@ create_env_fn = functools.partial(
 )
 
 
-from kitchen_env.constants import (
+from kitchen_shift.constants import (
     ORIG_OBS_ELEMENT_INDICES,
     OBS_ELEMENT_INDICES,
     OBS_ELEMENT_GOALS,
     ORIG_FRANKA_INIT_QPOS,
 )
-from kitchen_env.utils import get_task_info
+from kitchen_shift.utils import get_task_info
 
 
 def save_video(render_buffer, filepath):
@@ -224,7 +224,7 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 # set the solver_sim state using the recorded state
                 # and grab obs_ee to step the actual simulator
 
-                from kitchen_env.mujoco.obs_utils import get_obs_ee
+                from kitchen_shift.mujoco.obs_utils import get_obs_ee
 
                 # could also just only use data['qpos'], but for consistency grab data['ctrl']
                 _qpos = np.concatenate(
@@ -277,7 +277,7 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 ja = env._apply_solver_sim()
                 # print(np.linalg.norm(ja - data['qpos'][i_frame][:9]))
 
-                from kitchen_env.mujoco.rotations import euler2quat, quat2euler, subtract_euler
+                from kitchen_shift.mujoco.rotations import euler2quat, quat2euler, subtract_euler
 
                 pos_a = new_mocap_pos - mocap_pos
                 rot_a = subtract_euler(quat2euler(new_mocap_quat), quat2euler(mocap_quat))

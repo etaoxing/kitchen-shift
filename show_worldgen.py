@@ -2,7 +2,7 @@ import numpy as np
 import os
 import itertools
 
-import kitchen_env
+import kitchen_shift
 import gym
 
 
@@ -89,7 +89,7 @@ env = gym.make(
     camera_id=6,
     render_size=rs,
 )
-env = kitchen_env.MujocoWorldgenKitchenEnvWrapper(env)
+env = kitchen_shift.MujocoWorldgenKitchenEnvWrapper(env)
 
 os.makedirs('worldgen', exist_ok=True)
 

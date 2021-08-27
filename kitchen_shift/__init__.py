@@ -5,7 +5,7 @@ try:
 
     register(
         id='kitchen-v0',
-        entry_point='kitchen_env.kitchen_v0:Kitchen_v0',
+        entry_point='kitchen_shift.kitchen_v0:Kitchen_v0',
         max_episode_steps=280,
     )
 except:
@@ -16,7 +16,7 @@ try:
 
     register(
         id='kitchen-v1',
-        entry_point='kitchen_env.kitchen_v1:Kitchen_v1',
+        entry_point='kitchen_shift.kitchen_v1:Kitchen_v1',
         max_episode_steps=280,
     )
 except:
