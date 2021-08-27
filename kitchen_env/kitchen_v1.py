@@ -295,12 +295,12 @@ class Kitchen_v1(gym.Env):
                 _robot_qv = self.sim.data.qvel[: self.N_DOF_ROBOT].copy()
 
                 _robot_qp += (
-                    noise_ratio
+                    self.robot_cache_noise_ratio
                     * self.robot.pos_noise_amp[: self.N_DOF_ROBOT]
                     * self.np_random2.uniform(low=-1.0, high=1.0, size=self.N_DOF_ROBOT)
                 )
                 _robot_qv += (
-                    noise_ratio
+                    self.robot_cache_noise_ratio
                     * self.robot.vel_noise_amp[: self.N_DOF_ROBOT]
                     * self.np_random2.uniform(low=-1.0, high=1.0, size=self.N_DOF_ROBOT)
                 )
