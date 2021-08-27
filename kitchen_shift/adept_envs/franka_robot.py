@@ -52,7 +52,7 @@ class Robot(BaseRobot):
         # Robot: Handware
         if self.is_hardware:
 
-            if franka_interface is '':
+            if franka_interface == '':
                 raise NotImplementedError()
                 from handware.franka import franka
 
