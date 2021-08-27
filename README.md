@@ -100,13 +100,14 @@ env = kitchen_shift.MujocoWorldgenKitchenEnvWrapper(env)
 
 domain_params = [
     ('change_microwave', 3),
-    ('change_kettle', 6),
+    ('change_kettle', 5),
     ('change_camera', 2),
     ('change_objects_layout', 'microwave', 'closer_angled'),
     ('change_objects_layout', 'kettle', 'bot_right_angled'),
     ('change_hinge_texture', 'wood1'),
+    ('change_floor_texture', 'white_marble_tile'),
     ('change_object_done', 'switch'),
-    ('change_robot_init_qpos', [-0.4, -1.73, 1.76, -1.85, 0.15, 0.7, 1.7, 0.04, 0.04]),
+    ('change_robot_init_qpos', [-1.18, -1.76, 1.43, -1.57, -0.1, 0.88, 2.55, 0.0, -0.0]),
 ]
 
 env.reset_domain_changes()
@@ -122,7 +123,14 @@ from PIL import Image
 
 im = env.render(mode='rgb_array', height=rs[0], width=rs[1])
 Image.fromarray(im).save('compose_worldgen_example.png')
+
+env.reset() # domain shifts are still applied
+
+env.reset_domain_changes()
+env.reset(reload_model_xml=True) # back to the default training domain
 ```
+
+![](assets/compose_worldgen_example.png)
 
 
 ## References
