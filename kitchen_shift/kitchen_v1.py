@@ -492,13 +492,13 @@ class Kitchen_v1(gym.Env):
                 raise RuntimeError
 
             if isinstance(self.init_random_steps_window, int):
-                t = self.init_random_steps_window * self.frame_skip
+                low = 0
+                high = self.init_random_steps_window * self.frame_skip
             else:
-                t = self.np_random2.integers(
-                    self.init_random_steps_window[0] * self.frame_skip,
-                    self.init_random_steps_window[1] * self.frame_skip,
-                    endpoint=True,
-                )
+                low = self.init_random_steps_window[0] * self.frame_skip
+                high = self.init_random_steps_window[1] * self.frame_skip
+                
+            t = self.np_random2.integers(low, high, endpoint=True)
             for _ in range(t):
                 self.sim.step()
 
