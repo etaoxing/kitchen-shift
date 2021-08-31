@@ -119,15 +119,15 @@ env.reset(reload_model_xml=True)
 for _ in range(1):
     state, reward, done, info = env.step(np.zeros(env.action_space.shape[0]))
 
-from PIL import Image
+import cv2
 
-im = env.render(mode='rgb_array', height=rs[0], width=rs[1])
-Image.fromarray(im).save('compose_worldgen_example.png')
+img = env.render(mode='rgb_array', height=rs[0], width=rs[1])
+cv2.imwrite('assets/compose_worldgen_example.png', img)
 
-env.reset() # domain shifts are still applied
+env.reset()  # domain shifts are still applied
 
 env.reset_domain_changes()
-env.reset(reload_model_xml=True) # back to the default training domain
+env.reset(reload_model_xml=True)  # back to the default training domain
 ```
 
 ![](assets/compose_worldgen_example.png)

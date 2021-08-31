@@ -1,9 +1,9 @@
+import cv2
+import itertools
 import numpy as np
 import os
-import itertools
 
 import kitchen_shift
-import gym
 
 
 domain_params = dict(
@@ -84,23 +84,20 @@ domain_params = dict(
 
 rs = (480, 480)
 
-env = gym.make(
-    'kitchen-v1',
+env = kitchen_shift.Kitchen_v1(
     camera_id=6,
     render_size=rs,
 )
 env = kitchen_shift.MujocoWorldgenKitchenEnvWrapper(env)
 
-os.makedirs('worldgen', exist_ok=True)
-
+os.makedirs('assets/worldgen', exist_ok=True)
 
 i = 0
 for k, v in domain_params.items():
     for j, ps in enumerate(v):
+        print(i, ps)
 
         env.reset_domain_changes()
-
-        print(i, ps)
 
         for p in ps:
             fn = getattr(env, p[0])
@@ -111,10 +108,7 @@ for k, v in domain_params.items():
         for _ in range(1):
             state, reward, done, info = env.step(np.zeros(9))
 
-        im = env.render(mode='rgb_array', height=rs[0], width=rs[1])
-
-        from PIL import Image
-
-        Image.fromarray(im).save(f'worldgen/{i}-{k}-{j}.png')
+        img = env.render(mode='rgb_array', height=rs[0], width=rs[1])
+        cv2.imwrite(f'assets/worldgen/{k}-{j}.png', img)
 
         i += 1
