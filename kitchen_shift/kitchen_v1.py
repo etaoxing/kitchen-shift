@@ -114,7 +114,7 @@ class Kitchen_v1(gym.Env):
         elif robot == 'xarm7':
             raise NotImplementedError
         else:
-            raise ValueError
+            raise ValueError(f"Unsupported robot: {robot}")
 
         # mujoco.Physics.from_xml_string messes up asset paths
         # mjcf.from_xml_string doesn't seem to support the same xml parsing as the actual mjlib
@@ -172,7 +172,7 @@ class Kitchen_v1(gym.Env):
             self.act_mid = np.zeros(action_dim)
             self.act_amp = 3.0 * np.ones(action_dim)
         else:
-            raise ValueError
+            raise ValueError(f"Unsupported ctrl_mode: {self.ctrl_mode}")
 
         self.action_space = gym.spaces.Box(-1.0, 1.0, shape=(action_dim,))
 
@@ -489,7 +489,9 @@ class Kitchen_v1(gym.Env):
 
         if self.init_random_steps_window is not None:
             if self.rng_type != 'generator':
-                raise RuntimeError
+                raise RuntimeError(
+                    "Can only use rng_type=='generator' with init_random_steps_window"
+                )
 
             if isinstance(self.init_random_steps_window, int):
                 low = 0
@@ -497,7 +499,7 @@ class Kitchen_v1(gym.Env):
             else:
                 low = self.init_random_steps_window[0] * self.frame_skip
                 high = self.init_random_steps_window[1] * self.frame_skip
-                
+
             t = self.np_random2.integers(low, high, endpoint=True)
             for _ in range(t):
                 self.sim.step()
@@ -586,7 +588,7 @@ class Kitchen_v1(gym.Env):
         elif mode == 'human':
             self.renderer.render_to_window()  # adept_envs.mujoco_env.MujocoEnv.render
         else:
-            raise NotImplementedError(mode)
+            raise ValueError(f"Unsupported render mode: {mode}")
 
     def seed(self, seed=None):
         self._base_seed = seed
@@ -605,4 +607,4 @@ class Kitchen_v1(gym.Env):
             self.np_random2 = make_rng(seed + 1 if seed is not None else seed)
             return [seed]
         else:
-            raise ValueError
+            raise ValueError(f"Unsupported rng_type: {self.rng_type}")
