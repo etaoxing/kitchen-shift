@@ -2,11 +2,16 @@
 
 ## Quickstart (with Mujoco)
 
-Go through the process of installing [`dm_control`](https://github.com/deepmind/dm_control#requirements-and-installation) first.
+We use `python==3.9`. Go through the process of installing [`dm_control`](https://github.com/deepmind/dm_control#requirements-and-installation) first. Make sure you also go through the Rendering section.
 
 ```
-EXPORT MUJOCO_GL=egl
-EXPORT EGL_DEVICE_ID=0
+pip install -r requirements.txt
+pip install -e .
+```
+
+```
+export MUJOCO_GL=egl
+export EGL_DEVICE_ID=0
 ```
 
 ```
@@ -22,6 +27,7 @@ env = gym.make('kitchen-v1', camera_id=6)
 
 ## Changelog
 
+- *coming soon: PyPI package*
 - 08/28/21: Initial release
 
 ## Comparison to the original codebase
@@ -32,9 +38,7 @@ This is undesirable because the underlying Mujoco simulation could step near det
 
 General practice is to add some noise to the simulator reset state, see [Gym](https://github.com/openai/gym/blob/4ede9280f9c477f1ca09929d10cdc1e1ba1129f1/gym/envs/mujoco/ant.py#L48) and [Robo](https://github.com/google-research/robodesk/blob/a8edde34f879242730c026dfe7c6e3beb4318023/robodesk/robodesk.py#L228)[Desk](https://github.com/google-research/robodesk/blob/a8edde34f879242730c026dfe7c6e3beb4318023/robodesk/robodesk.py#L199).
 
-> Sidenote: Using the default np.random and np.random.RandomState is undesirable as it is not process-safe. It should be deprecated in favor of [np.random.Generator](https://numpy.org/doc/stable/reference/random/generator.html), also see [this](https://old.reddit.com/r/MachineLearning/comments/mocpgj/p_using_pytorch_numpy_a_bug_that_plagues/) and [this](https://www.pcg-random.org/rng-basics.html) for additional discussion on RNG.
-
-> We use SFC64 instead of PCG64 as the bit generator, see [this issue](https://github.com/numpy/numpy/issues/16313) for context on why.
+> Sidenote: We have opted to use the new [np.random.Generator](https://numpy.org/doc/stable/reference/random/generator.html). See [this](https://old.reddit.com/r/MachineLearning/comments/mocpgj/p_using_pytorch_numpy_a_bug_that_plagues/) and [this](https://www.pcg-random.org/rng-basics.html) for additional discussion on RNG. We use SFC64 instead of PCG64 as the bit generator, see [this issue](https://github.com/numpy/numpy/issues/16313) for context on why. Using the original np.random and np.random.RandomState should also be done with care as it is not process-safe.  
 
 We take two approaches to apply noise perturbations to the initial state of the simulation. We add a small amount of random noise to the initial state and also step the simulator a random number of times, immediately after resetting the environment.
 
