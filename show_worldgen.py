@@ -9,14 +9,14 @@ import kitchen_shift
 domain_params = dict(
     train=[[]],
     change_object=(
-        [[('change_microwave', i)] for i in range(1, 4)]
-        + [[('change_kettle', i)] for i in range(1, 8)]
+        [[('change_microwave', i)] for i in [1, 2, 3]]
+        + [[('change_kettle', i)] for i in [1, 2, 3, 4]]
     ),
     change_object_layout=(
         [[('change_objects_layout', 'microwave', i)] for i in ['closer', 'closer_angled']]
         + [
             [('change_objects_layout', 'kettle', i)]
-            for i in ['top_right', 'bot_right', 'bot_right_angled']
+            for i in ['bot_left_angled', 'top_right', 'bot_right', 'bot_right_angled']
         ]
         + [
             [('change_objects_layout', 'slide', 'right_raised')],
