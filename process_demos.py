@@ -137,6 +137,11 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
         # env.sim.data.qvel[:] = init_qvel
         # env.sim.forward()
 
+        if env.ctrl_mode == 'relmocapik':
+            env._reset_solver_sim(init_qpos, init_qvel)
+            mocap_pos = env.solver_sim.data.mocap_pos[env.mocapid, ...].copy()
+            mocap_quat = env.solver_sim.data.mocap_quat[env.mocapid, ...].copy()
+
     render_buffer = []
     path = dict(observations=[], actions=[])
     N = data['ctrl'].shape[0]
@@ -195,6 +200,8 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 act = np.clip(act, -0.999, 0.999)
 
             elif env.ctrl_mode == 'absmocapik':
+                raise NotImplementedError  # doesn't work
+
                 # gripper_a = data['ctrl'][i_frame][7:9]
                 # ctrl = np.concatenate(
                 #     [data['mocap_pos'][i_frame], data['mocap_quat'][i_frame], gripper_a]
@@ -205,8 +212,6 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 # set the solver_sim state using the recorded state
                 # and grab obs_ee to step the actual simulator
 
-                from kitchen_shift.mujoco.obs_utils import get_obs_ee
-
                 # could also just only use data['qpos'], but for consistency grab data['ctrl']
                 _qpos = np.concatenate(
                     [data['ctrl'][i_frame], data['qpos'][i_frame][-env.N_DOF_OBJECT :]]
@@ -216,6 +221,7 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 # env.solver_sim_renderer.render_to_window()
                 # time.sleep(1)
 
+                # from kitchen_shift.mujoco.obs_utils import get_obs_ee
                 # obs_ee = get_obs_ee(env.solver_sim)
                 obs_ee = np.concatenate(
                     [
