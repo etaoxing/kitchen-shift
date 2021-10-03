@@ -53,7 +53,7 @@ class Kitchen_v1(gym.Env):
         noise_ratio=0.1,
         robot_cache_noise_ratio=None,
         object_pos_noise_amp=0.1,
-        object_vel_noise_qmp=0.1,
+        object_vel_noise_amp=0.1,
         robot_obs_extra_noise_amp=0.1,
         init_random_steps_window=None,
         init_perturb_robot_ratio=None,
@@ -80,7 +80,7 @@ class Kitchen_v1(gym.Env):
         # of obs used by the robot controller
         self.robot_cache_noise_ratio = robot_cache_noise_ratio
         self.object_pos_noise_amp = object_pos_noise_amp
-        self.object_vel_noise_amp = object_vel_noise_qmp
+        self.object_vel_noise_amp = object_vel_noise_amp
         self.robot_obs_extra_noise_amp = robot_obs_extra_noise_amp
 
         self.init_random_steps_window = init_random_steps_window
