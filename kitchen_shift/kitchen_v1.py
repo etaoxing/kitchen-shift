@@ -42,6 +42,7 @@ class Kitchen_v1(gym.Env):
         self,
         ctrl_mode='absvel',
         compensate_gravity=False,
+        noslip_off=False,
         frame_skip=40,
         camera_id=6,
         with_obs_ee=False,
@@ -67,6 +68,7 @@ class Kitchen_v1(gym.Env):
         # http://www.mujoco.org/forum/index.php?threads/gravitational-matrix-calculation.3404/
         # https://github.com/openai/mujoco-py/blob/4830435a169c1f3e3b5f9b58a7c3d9c39bdf4acb/mujoco_py/mjpid.pyx#L243
         self.compensate_gravity = compensate_gravity
+        self.noslip_off = noslip_off
 
         self.with_obs_ee = with_obs_ee
         self.with_obs_forces = with_obs_forces
@@ -101,6 +103,12 @@ class Kitchen_v1(gym.Env):
         #     )
         #     # NOTE: if using larger render sizes, probably want to scale up shadow quality as well
         self.set_camera_id(camera_id)
+
+        if self.noslip_off:
+            self.model_xml = self.model_xml.replace(
+                '<option timestep="0.002" cone="elliptic" impratio="2" noslip_iterations="20"/>',
+                '<option timestep="0.002"/>',
+            )
 
         if self.robot_name == 'franka':
             pass
@@ -608,7 +616,7 @@ class Kitchen_v1(gym.Env):
         for _ in range(10):
             self.sim.step()
 
-        if self.ctrl_mode == 'absmocapik' or self.ctrl_mode == 'relmocapik':
+        if 'mocap' in self.ctrl_mode:
             self.solver_sim.data.qpos[:] = self.sim.data.qpos[:].copy()
             self.solver_sim.data.qvel[:] = self.sim.data.qvel[:].copy()
             reset_mocap_welds(self.solver_sim)

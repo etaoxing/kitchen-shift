@@ -1,5 +1,8 @@
 # `KitchenShift`, a fork of `adept_envs` with improvements like additional functionality for worldgen.
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/etaoxing/kitchen-shift/blob/master/LICENSE)
+
+
 ## Quickstart (with Mujoco)
 
 We use `python==3.9`. Go through the process of installing [`dm_control`](https://github.com/deepmind/dm_control#requirements-and-installation) first. Make sure you also go through the Rendering section.
@@ -71,10 +74,9 @@ MUJOCO_GL=egl EGL_DEVICE_ID=0 python -u process_demos.py \
 --CAMERA_ID 6 \
 --RENDER_SIZE 256 256 \
 --ROBOT franka2 \
---RNG_TYPE generator \
 --NUM_WORKERS 12 --LOG 0 \
 --CTRL_MODE abspos \
---OUT_DIR workdir/0818c6r256_abspos
+--OUT_DIR workdir/c6r256_abspos
 ```
 
 ## Baselines

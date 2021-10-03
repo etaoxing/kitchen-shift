@@ -35,6 +35,7 @@ parser.add_argument(
 )
 parser.add_argument('--ROBOT', default='franka2', type=str)
 parser.add_argument('--CTRL_MODE', default='absvel')
+parser.add_argument('--NOSLIP_OFF', default=False, type=bool)
 parser.add_argument('--FPS', default=30.0, type=float)
 parser.add_argument('--FRAME_SKIP', default=40, type=int)
 parser.add_argument(
@@ -60,7 +61,6 @@ parser.add_argument(
     # lowered threshold compared to 0.3 (guarantees kettle in place when splitting singleobj)
     type=float,
 )
-parser.add_argument('--RNG_TYPE', default='generator', type=str, choices=['generator', 'legacy'])
 parser.add_argument('--SINGLEOBJ_TIME_EPS', default=15, type=int)
 parser.add_argument('--MAX_ERROR_IGNORE_THRESH', default=0.8, type=float)
 parser.add_argument('--CHECK_SUCCESS', default=False, type=bool)
@@ -77,34 +77,18 @@ env_kwargs = dict(
     frame_skip=args.FRAME_SKIP,
     ctrl_mode=args.CTRL_MODE,
     # compensate_gravity=True,
+    noslip_off=args.NOSLIP_OFF,
     with_obs_ee=True,
     with_obs_forces=True,
     rot_use_euler=True,
     robot=args.ROBOT,
+    rng_type='legacy',
     #
     #
     # noise_ratio=0.1,
     # object_pos_noise_amp=0.1,
     # object_vel_noise_qmp=0.1,
 )
-if args.RNG_TYPE == 'generator':
-    env_kwargs.update(
-        dict(
-            init_random_steps_window=(0, 3),
-            init_perturb_robot_ratio=0.03,
-            init_perturb_object_ratio=0.03,
-            rng_type='generator',
-        )
-    )
-elif args.RNG_TYPE == 'legacy':
-    env_kwargs.update(
-        dict(
-            init_random_steps_window=None,
-            rng_type='legacy',
-        )
-    )
-else:
-    raise ValueError
 
 # TODO: we spawn a separate env if want to convert demos to a different action space
 
@@ -143,18 +127,15 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
     init_qvel = data['qvel'][0].copy()
 
     if use_physics:
+        env.set_init_qpos(init_qpos)
+
         # initialize
         env.reset()
 
-        # prepare env
-        env.sim.data.qpos[:] = init_qpos
-        env.sim.data.qvel[:] = init_qvel
-        env.sim.forward()
-
-        if env.ctrl_mode == 'relmocapik':
-            env._reset_solver_sim(init_qpos, init_qvel)
-            mocap_pos = env.solver_sim.data.mocap_pos[env.mocapid, ...].copy()
-            mocap_quat = env.solver_sim.data.mocap_quat[env.mocapid, ...].copy()
+        # # prepare env
+        # env.sim.data.qpos[:] = init_qpos
+        # env.sim.data.qvel[:] = init_qvel
+        # env.sim.forward()
 
     render_buffer = []
     path = dict(observations=[], actions=[])
