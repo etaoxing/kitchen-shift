@@ -39,22 +39,47 @@ domain_params = dict(
     change_texture=(
         [
             [('change_hinge_texture', i)]
-            for i in ['wood1', 'wood2', 'metal1', 'metal2', 'marble1', 'tile1']
+            for i in [
+                'wood1',
+                # 'wood2',
+                'metal1',
+                # 'metal2',
+                'marble1',
+                # 'tile1',
+            ]
         ]
         + [
             [('change_slide_texture', i)]
-            for i in ['wood1', 'wood2', 'metal1', 'metal2', 'marble1', 'tile1']
+            for i in [
+                # 'wood1',
+                'wood2',
+                # 'metal1',
+                'metal2',
+                # 'marble1',
+                'tile1',
+            ]
         ]
         + [
             [('change_floor_texture', i)]
-            for i in ['white_marble_tile', 'marble1', 'tile1', 'wood1', 'wood2']
+            for i in [
+                # 'white_marble_tile',
+                # 'marble1',
+                'tile1',
+                'wood1',
+                # 'wood2',
+            ]
         ]
         + [
             [('change_counter_texture', i)]
-            for i in ['white_marble_tile2', 'tile1', 'wood1', 'wood2']
+            for i in [
+                # 'white_marble_tile2',
+                # 'tile1',
+                # 'wood1',
+                'wood2',
+            ]
         ]
     ),
-    change_noise=([[('change_noise_ratio', i)] for i in [0.0, 1.0, 10.0]]),
+    change_noise=([[('change_noise_ratio', i)] for i in [0.5, 1.0, 10.0]]),
     change_robot_init=(
         [
             [('change_robot_init_qpos', i)]
@@ -109,6 +134,6 @@ for k, v in domain_params.items():
             state, reward, done, info = env.step(np.zeros(9))
 
         img = env.render(mode='rgb_array', height=rs[0], width=rs[1])
-        cv2.imwrite(f'assets/worldgen/{k}-{j}.png', img)
+        cv2.imwrite(f'assets/worldgen/{k}-{j}.png', img[:, :, ::-1])
 
         i += 1
