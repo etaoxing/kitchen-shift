@@ -33,7 +33,7 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
             robot_cache_noise_ratio=self.env.robot_cache_noise_ratio,
             init_qpos=self.env.init_qpos,
             #
-            init_random_steps_window=self.init_random_steps_window,
+            init_random_steps_set=self.init_random_steps_set,
             init_perturb_robot_ratio=self.init_perturb_robot_ratio,
             init_perturb_object_ratio=self.init_perturb_object_ratio,
             rng_type=self.rng_type,
@@ -203,12 +203,12 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
 
     def change_init_noise_params(
         self,
-        init_random_steps_window,
+        init_random_steps_set,
         init_perturb_robot_ratio,
         init_perturb_object_ratio,
         rng_type,
     ):
-        self.init_random_steps_window = init_random_steps_window
+        self.init_random_steps_set = init_random_steps_set
         self.init_perturb_robot_ratio = init_perturb_robot_ratio
         self.init_perturb_object_ratio = init_perturb_object_ratio
         self.rng_type = rng_type
@@ -265,7 +265,7 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
             )
             self.env.set_init_qpos(self.changed['init_qpos'])
             self.env.set_init_noise_params(
-                self.changed['init_random_steps_window'],
+                self.changed['init_random_steps_set'],
                 self.changed['init_perturb_robot_ratio'],
                 self.changed['init_perturb_object_ratio'],
                 self.changed['rng_type'],

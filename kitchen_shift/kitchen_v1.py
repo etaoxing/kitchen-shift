@@ -55,7 +55,7 @@ class Kitchen_v1(gym.Env):
         object_pos_noise_amp=0.1,
         object_vel_noise_amp=0.1,
         robot_obs_extra_noise_amp=0.1,
-        init_random_steps_window=None,
+        init_random_steps_set=None,
         init_perturb_robot_ratio=None,
         init_perturb_object_ratio=None,
         rng_type='legacy',
@@ -83,7 +83,7 @@ class Kitchen_v1(gym.Env):
         self.object_vel_noise_amp = object_vel_noise_amp
         self.robot_obs_extra_noise_amp = robot_obs_extra_noise_amp
 
-        self.init_random_steps_window = init_random_steps_window
+        self.init_random_steps_set = init_random_steps_set
         self.init_perturb_robot_ratio = init_perturb_robot_ratio
         self.init_perturb_object_ratio = init_perturb_object_ratio
         self.rng_type = rng_type
@@ -286,12 +286,12 @@ class Kitchen_v1(gym.Env):
 
     def set_init_noise_params(
         self,
-        init_random_steps_window,
+        init_random_steps_set,
         init_perturb_robot_ratio,
         init_perturb_object_ratio,
         rng_type,
     ):
-        self.init_random_steps_window = init_random_steps_window
+        self.init_random_steps_set = init_random_steps_set
         self.init_perturb_robot_ratio = init_perturb_robot_ratio
         self.init_perturb_object_ratio = init_perturb_object_ratio
 
@@ -553,20 +553,11 @@ class Kitchen_v1(gym.Env):
         obs = self.reset_model(reset_qpos=reset_qpos)
         obs = self._get_obs_dict(robot_cache_obs=True)
 
-        if self.init_random_steps_window is not None:
+        if self.init_random_steps_set is not None:
             if self.rng_type != 'generator':
-                raise RuntimeError(
-                    "Can only use rng_type=='generator' with init_random_steps_window"
-                )
+                raise RuntimeError("Can only use rng_type=='generator' with init_random_steps_set")
 
-            if isinstance(self.init_random_steps_window, int):
-                low = 0
-                high = self.init_random_steps_window * self.frame_skip
-            else:
-                low = self.init_random_steps_window[0] * self.frame_skip
-                high = self.init_random_steps_window[1] * self.frame_skip
-
-            t = self.np_random2.integers(low, high, endpoint=True)
+            t = self.np_random2.choice(self.init_random_steps_set)
             for _ in range(t):
                 self.sim.step()
 
