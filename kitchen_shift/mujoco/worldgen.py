@@ -129,7 +129,10 @@ class MujocoWorldgenKitchenEnvWrapper(gym.Wrapper):
                 kettle_qpos = np.array([0.23, 0.3504, 1.62])
             elif layout == 'bot_right_angled':
                 kettle_qpos = np.array([0.23, 0.3504, 1.62])
-                kettle_qrot = np.array([0.99, 0.0, 0.0, -0.5236])
+                kettle_qrot = np.array([-0.99, 0.0, 0.0, -0.5236])
+            elif layout == 'bot_left_angled':
+                # default pos is bot_left, only need to rot
+                kettle_qrot = np.array([-0.99, 0.0, 0.0, -0.5236])
             else:
                 raise ValueError
 
