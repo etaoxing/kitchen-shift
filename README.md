@@ -75,8 +75,8 @@ MUJOCO_GL=egl EGL_DEVICE_ID=0 python -u process_demos.py \
 --RENDER_SIZE 256 256 \
 --ROBOT franka2 \
 --NUM_WORKERS 12 --LOG 0 \
---CTRL_MODE abspos \
---OUT_DIR workdir/c6r256_abspos
+--CTRL_MODE absvel \
+--OUT_DIR workdir/c6r256_absvel
 ```
 
 ## Baselines
@@ -106,7 +106,7 @@ env = kitchen_shift.MujocoWorldgenKitchenEnvWrapper(env)
 
 domain_params = [
     ('change_microwave', 3),
-    ('change_kettle', 5),
+    ('change_kettle', 2),
     ('change_camera', 2),
     ('change_objects_layout', 'microwave', 'closer_angled'),
     ('change_objects_layout', 'kettle', 'bot_right_angled'),
@@ -128,7 +128,7 @@ for _ in range(1):
 import cv2
 
 img = env.render(mode='rgb_array', height=rs[0], width=rs[1])
-cv2.imwrite('assets/compose_worldgen_example.png', img)
+cv2.imwrite('assets/compose_worldgen_example.png', img[:, :, ::-1])
 
 env.reset()  # domain shifts are still applied
 
