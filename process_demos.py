@@ -35,6 +35,7 @@ parser.add_argument(
 )
 parser.add_argument('--ROBOT', default='franka2', type=str)
 parser.add_argument('--CTRL_MODE', default='absvel')
+parser.add_argument('--NOSLIP_OFF', default=False, type=bool)
 parser.add_argument('--FPS', default=30.0, type=float)
 parser.add_argument('--FRAME_SKIP', default=40, type=int)
 parser.add_argument(
@@ -60,7 +61,6 @@ parser.add_argument(
     # lowered threshold compared to 0.3 (guarantees kettle in place when splitting singleobj)
     type=float,
 )
-parser.add_argument('--RNG_TYPE', default='generator', type=str, choices=['generator', 'legacy'])
 parser.add_argument('--SINGLEOBJ_TIME_EPS', default=15, type=int)
 parser.add_argument('--MAX_ERROR_IGNORE_THRESH', default=0.8, type=float)
 parser.add_argument('--CHECK_SUCCESS', default=False, type=bool)
@@ -77,34 +77,18 @@ env_kwargs = dict(
     frame_skip=args.FRAME_SKIP,
     ctrl_mode=args.CTRL_MODE,
     # compensate_gravity=True,
+    noslip_off=args.NOSLIP_OFF,
     with_obs_ee=True,
     with_obs_forces=True,
     rot_use_euler=True,
     robot=args.ROBOT,
+    rng_type='legacy',
     #
     #
     # noise_ratio=0.1,
     # object_pos_noise_amp=0.1,
     # object_vel_noise_qmp=0.1,
 )
-if args.RNG_TYPE == 'generator':
-    env_kwargs.update(
-        dict(
-            init_random_steps_window=(0, 3),
-            init_perturb_robot_ratio=0.03,
-            init_perturb_object_ratio=0.03,
-            rng_type='generator',
-        )
-    )
-elif args.RNG_TYPE == 'legacy':
-    env_kwargs.update(
-        dict(
-            init_random_steps_window=None,
-            rng_type='legacy',
-        )
-    )
-else:
-    raise ValueError
 
 # TODO: we spawn a separate env if want to convert demos to a different action space
 
@@ -143,13 +127,15 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
     init_qvel = data['qvel'][0].copy()
 
     if use_physics:
+        env.set_init_qpos(init_qpos)
+
         # initialize
         env.reset()
 
-        # prepare env
-        env.sim.data.qpos[:] = init_qpos
-        env.sim.data.qvel[:] = init_qvel
-        env.sim.forward()
+        # # prepare env
+        # env.sim.data.qpos[:] = init_qpos
+        # env.sim.data.qvel[:] = init_qvel
+        # env.sim.forward()
 
         if env.ctrl_mode == 'relmocapik':
             env._reset_solver_sim(init_qpos, init_qvel)
@@ -214,6 +200,8 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 act = np.clip(act, -0.999, 0.999)
 
             elif env.ctrl_mode == 'absmocapik':
+                raise NotImplementedError  # doesn't work
+
                 # gripper_a = data['ctrl'][i_frame][7:9]
                 # ctrl = np.concatenate(
                 #     [data['mocap_pos'][i_frame], data['mocap_quat'][i_frame], gripper_a]
@@ -224,8 +212,6 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 # set the solver_sim state using the recorded state
                 # and grab obs_ee to step the actual simulator
 
-                from kitchen_shift.mujoco.obs_utils import get_obs_ee
-
                 # could also just only use data['qpos'], but for consistency grab data['ctrl']
                 _qpos = np.concatenate(
                     [data['ctrl'][i_frame], data['qpos'][i_frame][-env.N_DOF_OBJECT :]]
@@ -235,6 +221,7 @@ def render_demo(env, data, use_physics=False, log=True, task_objects=None):
                 # env.solver_sim_renderer.render_to_window()
                 # time.sleep(1)
 
+                # from kitchen_shift.mujoco.obs_utils import get_obs_ee
                 # obs_ee = get_obs_ee(env.solver_sim)
                 obs_ee = np.concatenate(
                     [

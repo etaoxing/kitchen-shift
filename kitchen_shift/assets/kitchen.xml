@@ -13,8 +13,7 @@
 <!--limitations under the License.-->
 <mujoco model="franka_kitchen">
     <compiler angle="radian"/>
-    <!-- <option timestep="0.002" cone="elliptic" impratio="10"/> -->
-    <option timestep="0.002" noslip_iterations="20"/>
+    <option timestep="0.002" cone="elliptic" impratio="2" noslip_iterations="20"/>
     <!-- <option timestep="0.002"/> -->
     <size njmax='1000' nconmax='1000'/>
 

@@ -9,14 +9,14 @@ import kitchen_shift
 domain_params = dict(
     train=[[]],
     change_object=(
-        [[('change_microwave', i)] for i in range(1, 4)]
-        + [[('change_kettle', i)] for i in range(1, 8)]
+        [[('change_microwave', i)] for i in [1, 2, 3]]
+        + [[('change_kettle', i)] for i in [1, 2, 3, 4]]
     ),
     change_object_layout=(
         [[('change_objects_layout', 'microwave', i)] for i in ['closer', 'closer_angled']]
         + [
             [('change_objects_layout', 'kettle', i)]
-            for i in ['top_right', 'bot_right', 'bot_right_angled']
+            for i in ['bot_left_angled', 'top_right', 'bot_right', 'bot_right_angled']
         ]
         + [
             [('change_objects_layout', 'slide', 'right_raised')],
@@ -39,22 +39,47 @@ domain_params = dict(
     change_texture=(
         [
             [('change_hinge_texture', i)]
-            for i in ['wood1', 'wood2', 'metal1', 'metal2', 'marble1', 'tile1']
+            for i in [
+                'wood1',
+                # 'wood2',
+                'metal1',
+                # 'metal2',
+                'marble1',
+                # 'tile1',
+            ]
         ]
         + [
             [('change_slide_texture', i)]
-            for i in ['wood1', 'wood2', 'metal1', 'metal2', 'marble1', 'tile1']
+            for i in [
+                # 'wood1',
+                'wood2',
+                # 'metal1',
+                'metal2',
+                # 'marble1',
+                'tile1',
+            ]
         ]
         + [
             [('change_floor_texture', i)]
-            for i in ['white_marble_tile', 'marble1', 'tile1', 'wood1', 'wood2']
+            for i in [
+                # 'white_marble_tile',
+                # 'marble1',
+                'tile1',
+                'wood1',
+                # 'wood2',
+            ]
         ]
         + [
             [('change_counter_texture', i)]
-            for i in ['white_marble_tile2', 'tile1', 'wood1', 'wood2']
+            for i in [
+                # 'white_marble_tile2',
+                # 'tile1',
+                # 'wood1',
+                'wood2',
+            ]
         ]
     ),
-    change_noise=([[('change_noise_ratio', i)] for i in [0.0, 1.0, 10.0]]),
+    change_noise=([[('change_noise_ratio', i)] for i in [0.5, 1.0, 10.0]]),
     change_robot_init=(
         [
             [('change_robot_init_qpos', i)]
@@ -109,6 +134,6 @@ for k, v in domain_params.items():
             state, reward, done, info = env.step(np.zeros(9))
 
         img = env.render(mode='rgb_array', height=rs[0], width=rs[1])
-        cv2.imwrite(f'assets/worldgen/{k}-{j}.png', img)
+        cv2.imwrite(f'assets/worldgen/{k}-{j}.png', img[:, :, ::-1])
 
         i += 1

@@ -42,6 +42,7 @@ class Kitchen_v1(gym.Env):
         self,
         ctrl_mode='absvel',
         compensate_gravity=False,
+        noslip_off=False,
         frame_skip=40,
         camera_id=6,
         with_obs_ee=False,
@@ -52,9 +53,9 @@ class Kitchen_v1(gym.Env):
         noise_ratio=0.1,
         robot_cache_noise_ratio=None,
         object_pos_noise_amp=0.1,
-        object_vel_noise_qmp=0.1,
+        object_vel_noise_amp=0.1,
         robot_obs_extra_noise_amp=0.1,
-        init_random_steps_window=None,
+        init_random_steps_set=None,
         init_perturb_robot_ratio=None,
         init_perturb_object_ratio=None,
         rng_type='legacy',
@@ -67,20 +68,22 @@ class Kitchen_v1(gym.Env):
         # http://www.mujoco.org/forum/index.php?threads/gravitational-matrix-calculation.3404/
         # https://github.com/openai/mujoco-py/blob/4830435a169c1f3e3b5f9b58a7c3d9c39bdf4acb/mujoco_py/mjpid.pyx#L243
         self.compensate_gravity = compensate_gravity
+        self.noslip_off = noslip_off
 
         self.with_obs_ee = with_obs_ee
         self.with_obs_forces = with_obs_forces
         self.rot_use_euler = rot_use_euler  # affects format of with_obs_ee
 
+        self.robot_name = robot
         self.noise_ratio = noise_ratio  # global noise multiplier, if < 1 then reduces noise
         # be careful when using robot_cache_noise_ratio, since this will affect noise
         # of obs used by the robot controller
         self.robot_cache_noise_ratio = robot_cache_noise_ratio
         self.object_pos_noise_amp = object_pos_noise_amp
-        self.object_vel_noise_amp = object_vel_noise_qmp
+        self.object_vel_noise_amp = object_vel_noise_amp
         self.robot_obs_extra_noise_amp = robot_obs_extra_noise_amp
 
-        self.init_random_steps_window = init_random_steps_window
+        self.init_random_steps_set = init_random_steps_set
         self.init_perturb_robot_ratio = init_perturb_robot_ratio
         self.init_perturb_object_ratio = init_perturb_object_ratio
         self.rng_type = rng_type
@@ -99,22 +102,29 @@ class Kitchen_v1(gym.Env):
         #         f'<global offwidth="{height}" offheight="{width}" />',
         #     )
         #     # NOTE: if using larger render sizes, probably want to scale up shadow quality as well
+        self.set_camera_id(camera_id)
 
-        if robot == 'franka':
+        if self.noslip_off:
+            self.model_xml = self.model_xml.replace(
+                '<option timestep="0.002" cone="elliptic" impratio="2" noslip_iterations="20"/>',
+                '<option timestep="0.002"/>',
+            )
+
+        if self.robot_name == 'franka':
             pass
-        elif robot == 'franka2':
+        elif self.robot_name == 'franka2':
             self.model_xml = self.model_xml.replace(
                 '<include file="franka/actuator0.xml"/>',
                 '<include file="franka2/actuator0.xml"/>',
             )
             self.model_xml = self.model_xml.replace(
-                '<include file="franka/franka_panda.xml"/',
+                '<include file="franka/franka_panda.xml"/>',
                 '<include file="franka2/franka_panda.xml"/>',
             )
-        elif robot == 'xarm7':
+        elif self.robot_name == 'xarm7':
             raise NotImplementedError
         else:
-            raise ValueError(f"Unsupported robot: {robot}")
+            raise ValueError(f"Unsupported robot: {self.robot_name}")
 
         # mujoco.Physics.from_xml_string messes up asset paths
         # mjcf.from_xml_string doesn't seem to support the same xml parsing as the actual mjlib
@@ -127,7 +137,6 @@ class Kitchen_v1(gym.Env):
         # _patch_mjlib_accessors(self.model, self.sim.data, True)
         # print(self.model_xml)
         self.load_sim(self.model_xml)
-        self.set_camera_id(camera_id)
 
         self.seed()
 
@@ -161,11 +170,8 @@ class Kitchen_v1(gym.Env):
 
             self.pos_range = 0.075
             self.rot_range = 0.075
-            self._create_solver_sim()
-            # TODO: if using worldgen, then need to propogate changes to solver_sim
         elif self.ctrl_mode == 'absmocapik':
             self.mocapid = None  # set later since sim is not yet initialized
-            self._create_solver_sim()
 
             action_dim = self.N_DOF_ROBOT  # xyz (3) + quat (4) + gripper (2) == 9
 
@@ -182,22 +188,84 @@ class Kitchen_v1(gym.Env):
         }
         self.observation_space = spaces.Dict(obs_space)
 
-        self.create_renderer()
-
-    def load_sim(self, xml_string):
+    def _create_sim(self, xml_string):
         with tempfile.NamedTemporaryFile(mode='w+', dir=self.model_dir) as f:
             f.write(xml_string)
             f.flush()
-            self.sim = mujoco.Physics.from_xml_path(f.name)
+            sim = mujoco.Physics.from_xml_path(f.name)
 
+        return sim
+
+    def load_sim(self, xml_string):
+        self.sim = self._create_sim(xml_string)
         _patch_mjlib_accessors(self.model, self.sim.data, True)
 
         self.N_DOF_ROBOT = self.sim.data.model.nu
         self.N_DOF_OBJECT = self.sim.data.model.nq - self.N_DOF_ROBOT
         self.robot = Robot(self.N_DOF_ROBOT, actuator_specs=self.sim.data.model.actuator_user)
 
-    def set_camera_id(self, camera_id):
-        self.camera_id = camera_id
+        if 'mocap' in self.ctrl_mode:
+            self._create_solver_sim(xml_string)
+
+        self.create_renderer()
+
+    def _create_solver_sim(self, xml_string):
+        from lxml import etree as ET
+
+        # returns Element rather than ElementTree like ET.parse, so don't need to getroot()
+        parser = ET.XMLParser(remove_blank_text=True, remove_comments=True)
+        domain_model_xml_tree = ET.fromstring(xml_string, parser=parser)
+        worldbody = domain_model_xml_tree.find('worldbody')
+
+        if self.robot_name == 'franka2':
+            fn = f'franka2/actuator0.xml'
+            n = domain_model_xml_tree.find(f'include[@file="{fn}"]')
+            n.attrib['file'] = 'franka2/teleop_actuator.xml'
+
+            equality = """
+            <equality>
+                <!-- original constraints -->
+                <!-- <weld body1="vive_controller" body2="world" solref="0.02 1" solimp=".7 .95 0.050"/>  -->
+                <!-- <weld body1="vive_controller" body2="panda0_link7" solref="0.02 1" solimp="0.7 0.95 0.050"/> -->
+
+                <!-- Set the impedance to constant 0.9, with width 0, seems to reduce penetration (ie. gripper finger w/ microwave handle) -->
+                <weld body1="vive_controller" body2="panda0_link7" solref="0.02 1" solimp="0.7 0.9 0"/>
+
+                <!-- from franka_panda_teleop.xml-->
+                <!-- <weld body1="vive_controller" body2="panda0_link7" solref="0.01 1" solimp=".25 .25 0.001"/>  -->
+
+                <!-- from Abhishek's code -->
+                <!-- <weld body1="vive_controller" body2="panda0_link7" solref="0.02 1" solimp=".4 .85 .1"/> -->
+            </equality>
+            """
+            equality = ET.fromstring(equality, parser=parser)
+            i = domain_model_xml_tree.getchildren().index(worldbody)
+            domain_model_xml_tree.insert(i - 1, equality)
+
+            controller = """
+            <!-- Mocap -->
+            <!-- <body name="vive_controller" mocap="true" pos="0 0 2.89" euler="-1.57 0 -.785"> -->
+            <body name="vive_controller" mocap="true" pos="-0.440 -0.092 2.026" euler="-1.57 0 -.785">
+                <geom type="box" group="2" pos='0 0 .142' size="0.02 0.10 0.03" contype="0" conaffinity="0" rgba=".9 .7 .95 0" euler="0 0 -.785"/>
+            </body>
+            """
+            controller = ET.fromstring(controller, parser=parser)
+            worldbody.insert(0, controller)
+
+            # for efficiency, delete some of the unneeded things
+            # texplane, MatPlane, light, floor, xaxis, yaxis, cylinder
+        else:
+            raise NotImplementedError
+
+        domain_model_xml = ET.tostring(
+            domain_model_xml_tree,
+            encoding='utf8',
+            method='xml',
+            pretty_print=True,
+        ).decode('utf8')
+
+        self.solver_sim = self._create_sim(domain_model_xml)
+        _patch_mjlib_accessors(self.solver_sim.model, self.solver_sim.data, True)
 
     def create_renderer(self):
         self.renderer = DMRenderer(self.sim, camera_settings=CAMERAS[self.camera_id])
@@ -205,6 +273,9 @@ class Kitchen_v1(gym.Env):
             self.solver_sim_renderer = DMRenderer(
                 self.solver_sim, camera_settings=CAMERAS[self.camera_id]
             )
+
+    def set_camera_id(self, camera_id):
+        self.camera_id = camera_id
 
     def set_init_qpos(self, qpos):
         self.init_qpos = qpos
@@ -215,12 +286,12 @@ class Kitchen_v1(gym.Env):
 
     def set_init_noise_params(
         self,
-        init_random_steps_window,
+        init_random_steps_set,
         init_perturb_robot_ratio,
         init_perturb_object_ratio,
         rng_type,
     ):
-        self.init_random_steps_window = init_random_steps_window
+        self.init_random_steps_set = init_random_steps_set
         self.init_perturb_robot_ratio = init_perturb_robot_ratio
         self.init_perturb_object_ratio = init_perturb_object_ratio
 
@@ -328,11 +399,6 @@ class Kitchen_v1(gym.Env):
         for k, v in obs_dict.items():
             obs_dict[k] = v.astype(np.float32)
         return obs_dict
-
-    def _create_solver_sim(self):
-        model_path = os.path.join(os.path.dirname(__file__), 'assets/kitchen_teleop_solver.xml')
-        self.solver_sim = mujoco.Physics.from_xml_path(model_path)
-        _patch_mjlib_accessors(self.solver_sim.model, self.solver_sim.data, True)
 
     # from adept_envs.mujoco_env.MujocoEnv
     def do_simulation(self, ctrl, n_frames):
@@ -487,20 +553,11 @@ class Kitchen_v1(gym.Env):
         obs = self.reset_model(reset_qpos=reset_qpos)
         obs = self._get_obs_dict(robot_cache_obs=True)
 
-        if self.init_random_steps_window is not None:
+        if self.init_random_steps_set is not None:
             if self.rng_type != 'generator':
-                raise RuntimeError(
-                    "Can only use rng_type=='generator' with init_random_steps_window"
-                )
+                raise RuntimeError("Can only use rng_type=='generator' with init_random_steps_set")
 
-            if isinstance(self.init_random_steps_window, int):
-                low = 0
-                high = self.init_random_steps_window * self.frame_skip
-            else:
-                low = self.init_random_steps_window[0] * self.frame_skip
-                high = self.init_random_steps_window[1] * self.frame_skip
-
-            t = self.np_random2.integers(low, high, endpoint=True)
+            t = self.np_random2.choice(self.init_random_steps_set)
             for _ in range(t):
                 self.sim.step()
 
@@ -550,7 +607,7 @@ class Kitchen_v1(gym.Env):
         for _ in range(10):
             self.sim.step()
 
-        if self.ctrl_mode == 'absmocapik' or self.ctrl_mode == 'relmocapik':
+        if 'mocap' in self.ctrl_mode:
             self.solver_sim.data.qpos[:] = self.sim.data.qpos[:].copy()
             self.solver_sim.data.qvel[:] = self.sim.data.qvel[:].copy()
             reset_mocap_welds(self.solver_sim)
