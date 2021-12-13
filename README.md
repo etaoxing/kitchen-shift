@@ -62,13 +62,13 @@ Below we attempt to list all the changes from the original environment code:
 
 The [original](https://github.com/google-research/relay-policy-learning/blob/cd70ac9334f584f86db281a1ffd3e5cbc3e5e293/kitchen_demos_multitask.zip) demonstrations data was captured by having a human control the simulated robot with VR and mocap constraints.
 
-We provide a filtered [version](https://github.com/etaoxing/kitchen-shift/releases/v0.1/download/kitchen_demos_multitask_1003.zip) of that dataset which removes some of the unuseable or duplicate files.
+We provide a filtered [version](https://github.com/etaoxing/kitchen-shift/releases/download/v0.1/kitchen_demos_multitask_1003.zip) of that dataset which removes some of the unuseable or duplicate files.
 
 ## Generating trajectories (optional)
 
 We seed the environments used to generate the demo trajectories, and different parameters, thresholds, or changes in noise to the simulation will change the generated trajectories. This may impact policy learning, even though the generated demo videos look fine.
 
-We provide the generated demonstrations used in our experiments [here](https://github.com/etaoxing/kitchen-shift/releases/v0.1/download/1003c6r256_absvel.zip), and also supply the log outputted when we generated the demonstrations. If you are re-generating the demonstrations, make sure that the log outputs are exact or similar enough. We tried to keep simulation parameters and behavior similar to the original environment, in order to generate demos that match the original release.
+We provide the generated demonstrations used in our experiments [here](https://github.com/etaoxing/kitchen-shift/releases/download/v0.1/1003c6r256_absvel.zip), and also supply the log outputted when we generated the demonstrations. If you are re-generating the demonstrations, make sure that the log outputs are exact or similar enough. We tried to keep simulation parameters and behavior similar to the original environment, in order to generate demos that match the original release.
 
 ```
 MUJOCO_GL=egl EGL_DEVICE_ID=0 python -u process_demos.py \
