@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/etaoxing/kitchen-shift/blob/master/LICENSE)
 
+![](assets/figure_domain_shift_viz.png)
 
 ## Quickstart (with Mujoco)
 
@@ -17,7 +18,7 @@ export MUJOCO_GL=egl
 export EGL_DEVICE_ID=0
 ```
 
-```
+```python
 import kitchen_shift
 import gym
 
@@ -30,7 +31,7 @@ env = gym.make('kitchen-v1', camera_id=6)
 
 ## Changelog
 
-- *coming soon: PyPI package*
+- 12/13/21: Release v0.1
 - 08/28/21: Initial release
 
 ## Comparison to the original codebase
@@ -61,13 +62,13 @@ Below we attempt to list all the changes from the original environment code:
 
 The [original](https://github.com/google-research/relay-policy-learning/blob/cd70ac9334f584f86db281a1ffd3e5cbc3e5e293/kitchen_demos_multitask.zip) demonstrations data was captured by having a human control the simulated robot with VR and mocap constraints.
 
-We provide a filtered [version]() of that dataset which removes some of the unuseable or duplicate files.
+We provide a filtered [version](https://github.com/etaoxing/kitchen-shift/releases/v0.1/download/kitchen_demos_multitask_1003.zip) of that dataset which removes some of the unuseable or duplicate files.
 
 ## Generating trajectories (optional)
 
 We seed the environments used to generate the demo trajectories, and different parameters, thresholds, or changes in noise to the simulation will change the generated trajectories. This may impact policy learning, even though the generated demo videos look fine.
 
-We provide the generated demonstrations used in our experiments [here](), and also supply the log outputted when we generated the demonstrations. If you are re-generating the demonstrations, make sure that the log outputs are exact or similar enough. We tried to keep simulation parameters and behavior similar to the original environment, in order to generate demos that match the original release.
+We provide the generated demonstrations used in our experiments [here](https://github.com/etaoxing/kitchen-shift/releases/v0.1/download/1003c6r256_absvel.zip), and also supply the log outputted when we generated the demonstrations. If you are re-generating the demonstrations, make sure that the log outputs are exact or similar enough. We tried to keep simulation parameters and behavior similar to the original environment, in order to generate demos that match the original release.
 
 ```
 MUJOCO_GL=egl EGL_DEVICE_ID=0 python -u process_demos.py \
@@ -87,26 +88,24 @@ If you are interested in baseline algorithms and policy learning results using K
 
 We provide a `gym.Wrapper` to add [worldgen](https://github.com/openai/mujoco-worldgen) functionality by modifying the XML file parsed by Mujoco. We use this function to apply independent types of domain shifts to the environment, see `show_worldgen.py`. 
 
-![](assets/figure_domain_shift_viz.png)
-
 These worldgen functions could also be composed, for example:
 
-```
+```python
+# 1. Create env
 import numpy as np
 import kitchen_shift
 import gym
 
 rs = (480, 480)
-env = gym.make(
-    'kitchen-v1',
-    camera_id=6,
-    render_size=rs,
-)
+env = gym.make('kitchen-v1', camera_id=6, render_size=rs)
+
+# 2. Apply worldgen wrapepr
 env = kitchen_shift.MujocoWorldgenKitchenEnvWrapper(env)
 
+# 3. Define domain shifts
 domain_params = [
     ('change_microwave', 3),
-    ('change_kettle', 2),
+    ('change_kettle', 5),
     ('change_camera', 2),
     ('change_objects_layout', 'microwave', 'closer_angled'),
     ('change_objects_layout', 'kettle', 'bot_right_angled'),
@@ -116,12 +115,14 @@ domain_params = [
     ('change_robot_init_qpos', [-1.18, -1.76, 1.43, -1.57, -0.1, 0.88, 2.55, 0.0, -0.0]),
 ]
 
+# 4. Apply domain shifts to env
 env.reset_domain_changes()
 for p in domain_params:
     fn = getattr(env, p[0])
     fn(*p[1:])
 env.reset(reload_model_xml=True)
 
+# 5. Interact with env
 for _ in range(1):
     state, reward, done, info = env.step(np.zeros(env.action_space.shape[0]))
 
@@ -145,15 +146,24 @@ env.reset(reload_model_xml=True)  # back to the default training domain
 
 ```
 @inproceedings{gupta2020relay,
-  title={Relay Policy Learning: Solving Long-Horizon Tasks via Imitation and Reinforcement Learning},
-  author={Gupta, Abhishek and Kumar, Vikash and Lynch, Corey and Levine, Sergey and Hausman, Karol},
-  booktitle={Conference on Robot Learning},
-  pages={1025--1037},
-  year={2020},
-  organization={PMLR}
+    title={Relay Policy Learning: Solving Long-Horizon Tasks via Imitation and Reinforcement Learning},
+    author={Gupta, Abhishek and Kumar, Vikash and Lynch, Corey and Levine, Sergey and Hausman, Karol},
+    booktitle={Conference on Robot Learning},
+    pages={1025--1037},
+    year={2020},
+    organization={PMLR}
 }
 ```
 
 [2] [See borrowed assets](#borrowed-assets)
 
-[3] *Our paper, coming soon*
+[3] Our paper
+```
+@inproceedings{xing2021kitchenshift,
+    title={KitchenShift: Evaluating Zero-Shot Generalization of Imitation-Based Policy Learning Under Domain Shifts},
+    author={Xing, Eliot and Gupta, Abhinav and Powers*, Sam and Dean*, Victoria},
+    booktitle={NeurIPS 2021 Workshop on Distribution Shifts: Connecting Methods and Applications},
+    year={2021},
+    url={https://openreview.net/forum?id=DdglKo8hBq0}
+}
+```
