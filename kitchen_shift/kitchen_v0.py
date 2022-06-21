@@ -217,7 +217,7 @@ class Kitchen_v0(gym.Env):
         reward = 0.0
         env_info = {}
 
-        return obs, done, reward, env_info
+        return obs, reward, done, env_info
 
     def _step_absvel(self, a):
         a = np.clip(a, -1.0, 1.0)
